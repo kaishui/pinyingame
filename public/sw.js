@@ -1,5 +1,5 @@
 /* 拼音小勇士 Service Worker —— 提供离线缓存（安装到主屏后可离线使用） */
-const CACHE = 'pinyin-warrior-v1';
+const CACHE = 'pinyin-warrior-v2';
 const ASSETS = [
   './',
   './index.html',

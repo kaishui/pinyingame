@@ -840,14 +840,10 @@ function handleResult(texts) {
 async function onMicClick() {
   if (!heard) { toast('👂 先听一听示范，再跟读哦！'); playDemo(); return; }
   if (!getSR()) { showFeedback('fail', '⚠️ 当前浏览器不支持语音识别，请使用 Chrome / Edge'); return; }
-  if (!window.__SPEECH_NATIVE__) {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      stream.getTracks().forEach(t => t.stop());
-    } catch (e) {
-      showFeedback('fail', '🎤 请允许麦克风权限后再试（地址栏旁的锁形图标）');
-      return;
-    }
+  // 非安全上下文（http 局域网 IP）下浏览器禁用麦克风；不再用 getUserMedia 抢占麦克风（会与识别器抢音频导致“收不到声音”）
+  if (!window.__SPEECH_NATIVE__ && !(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) {
+    showFeedback('fail', '🔒 当前非安全环境（需 HTTPS 或 localhost），浏览器禁用了麦克风');
+    return;
   }
   startRecognition();
 }
@@ -1354,14 +1350,9 @@ function setWordRecording(on) {
 async function onWordMicClick() {
   if (!wordHeard) { toast('👂 先听一听示范，再跟读哦！'); wordDemo(); return; }
   if (!getSR()) { showWordFeedback('fail', '⚠️ 当前浏览器不支持语音识别，请使用 Chrome / Edge'); return; }
-  if (!window.__SPEECH_NATIVE__) {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      stream.getTracks().forEach(t => t.stop());
-    } catch (e) {
-      showWordFeedback('fail', '🎤 请允许麦克风权限后再试');
-      return;
-    }
+  if (!window.__SPEECH_NATIVE__ && !(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) {
+    showWordFeedback('fail', '🔒 当前非安全环境（需 HTTPS 或 localhost），浏览器禁用了麦克风');
+    return;
   }
   startWordRecognition();
 }
