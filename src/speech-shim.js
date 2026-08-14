@@ -13,10 +13,23 @@ if (Capacitor.isNativePlatform && Capacitor.isNativePlatform()) {
 
   // ---- 原生 TTS（中文女声语速稍慢）----
   window.__TTS_NATIVE__ = true;
+  // 预热：触发引擎异步初始化，避免首句发音被丢弃
+  try { TextToSpeech.getSupportedLanguages().catch(() => {}); } catch (e) {}
   window.__ttsSpeak = (text, done) => {
-    TextToSpeech.speak({ text, lang: 'zh-CN', rate: 0.6, pitch: 1.1, volume: 1.0 })
-      .then(() => { if (done) done(); })
-      .catch(() => { if (done) done(); });
+    const attempt = (n) => {
+      TextToSpeech.speak({ text, lang: 'zh-CN', rate: 0.6, pitch: 1.1, volume: 1.0 })
+        .then(() => { if (done) done(); })
+        .catch((e) => {
+          const msg = String((e && e.message) || e || '');
+          // 引擎尚未就绪（异步初始化）→ 稍等后重试
+          if (n < 5 && /not yet initialized|not available/i.test(msg)) {
+            setTimeout(() => attempt(n + 1), 400);
+          } else {
+            if (done) done();
+          }
+        });
+    };
+    attempt(0);
   };
   window.__ttsStop = () => { TextToSpeech.stop().catch(() => {}); };
 
