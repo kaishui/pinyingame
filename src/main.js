@@ -687,8 +687,28 @@ function pickVoice() {
 let speakQueue = [];
 let isSpeaking = false;
 function speak(text) {
-  if (!('speechSynthesis' in window)) return;
   if (!text) return;
+  speakQueue.push(text);
+  drainSpeak();
+}
+function drainSpeak() {
+  if (isSpeaking || speakQueue.length === 0) return;
+  isSpeaking = true;
+  const text = speakQueue.shift();
+  let done = false;
+  const finish = () => { if (done) return; done = true; isSpeaking = false; drainSpeak(); };
+
+  // 原生 App（安卓/iOS）：用 TTS 插件（安卓 WebView 不支持 speechSynthesis）
+  if (window.__TTS_NATIVE__ && window.__ttsSpeak) {
+    let safety = setTimeout(() => finish(), Math.max(3000, text.length * 400 + 2500));
+    try {
+      window.__ttsSpeak(text, () => { clearTimeout(safety); finish(); });
+    } catch (e) { clearTimeout(safety); finish(); }
+    return;
+  }
+
+  // 网页：用 Web Speech API
+  if (!('speechSynthesis' in window)) { finish(); return; }
   const u = new SpeechSynthesisUtterance(text);
   u.lang = 'zh-CN';
   const v = pickVoice();
@@ -696,16 +716,6 @@ function speak(text) {
   u.rate = 0.7;
   u.pitch = 1.15;   // 稍高音调，更贴近女生/儿童嗓音
   u.volume = 1;
-  speakQueue.push(u);
-  drainSpeak();
-}
-function drainSpeak() {
-  if (isSpeaking || speakQueue.length === 0) return;
-  if (!('speechSynthesis' in window)) { speakQueue = []; return; }
-  isSpeaking = true;
-  const u = speakQueue.shift();
-  let done = false;
-  const finish = () => { if (done) return; done = true; isSpeaking = false; drainSpeak(); };
   u.onend = finish;
   u.onerror = finish;
   const watchdog = setTimeout(() => { speechSynthesis.resume(); setTimeout(finish, 600); }, 6000);
@@ -714,7 +724,8 @@ function drainSpeak() {
   speechSynthesis.speak(u);
 }
 function stopSpeak() {
-  if ('speechSynthesis' in window) speechSynthesis.cancel();
+  if (window.__TTS_NATIVE__ && window.__ttsStop) { try { window.__ttsStop(); } catch (e) {} }
+  else if ('speechSynthesis' in window) speechSynthesis.cancel();
   speakQueue = [];
   isSpeaking = false;
 }
@@ -796,6 +807,7 @@ function initRecognition() {
     else if (e.error === 'no-speech') msg = '没有听清哦，请大声一点再试一次';
     else if (e.error === 'audio-capture') msg = '没有检测到麦克风设备';
     else if (e.error === 'network') msg = '网络错误，语音识别不可用';
+    else if (e.error === 'not-available') msg = '设备缺少语音识别服务（请确认已安装 Google 或系统语音服务）';
     else if (e.error === 'aborted') return;
     showFeedback('fail', '🎤 ' + msg);
   };
@@ -1247,6 +1259,7 @@ function initWordRecognition() {
     else if (e.error === 'no-speech') msg = '没有听清哦，请大声一点再试一次';
     else if (e.error === 'audio-capture') msg = '没有检测到麦克风设备';
     else if (e.error === 'network') msg = '网络错误，语音识别不可用';
+    else if (e.error === 'not-available') msg = '设备缺少语音识别服务（请确认已安装 Google 或系统语音服务）';
     else if (e.error === 'aborted') return;
     showWordFeedback('fail', '🎤 ' + msg);
   };
