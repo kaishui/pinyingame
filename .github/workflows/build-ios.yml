@@ -49,6 +49,26 @@ jobs:
           name: ios-app-unsigned
           path: ios/App/build/Build/Products/Release-iphoneos/*.app
 
+      # 未签名 IPA（可用免费 Apple ID 经 Sideloadly/AltStore 重签名安装）
+      - name: Package unsigned IPA
+        run: |
+          cd ios/App/build/Build/Products/Release-iphoneos
+          mkdir -p Payload
+          cp -R *.app Payload/
+          zip -qr PinyinWarrior-iOS-unsigned.ipa Payload
+
+      - name: Upload unsigned IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-unsigned-ipa
+          path: ios/App/build/Build/Products/Release-iphoneos/PinyinWarrior-iOS-unsigned.ipa
+
+      - name: Attach unsigned IPA to release (on tag)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ios/App/build/Build/Products/Release-iphoneos/PinyinWarrior-iOS-unsigned.ipa
+
       # —— 签名 + 导出可安装 IPA（需要配置以下 Secrets 并把上方 sign 打开）——
       # 需在仓库 Settings → Secrets and variables → Actions 中配置：
       #   BUILD_CERTIFICATE_BASE64  分发证书 .p12 的 base64
