@@ -806,7 +806,7 @@ function initRecognition() {
     if (e.error === 'not-allowed' || e.error === 'service-not-allowed') msg = '麦克风权限被拒绝，请在地址栏允许麦克风后重试';
     else if (e.error === 'no-speech') msg = '没有听清哦，请大声一点再试一次';
     else if (e.error === 'audio-capture') msg = '没有检测到麦克风设备';
-    else if (e.error === 'network') msg = '网络错误，语音识别不可用';
+    else if (e.error === 'network') msg = '语音识别需连接 Google 服务器，国内网络通常连不上；请改用安卓 App，或接入讯飞/百度等国内语音识别';
     else if (e.error === 'not-available') msg = '设备缺少语音识别服务（请确认已安装 Google 或系统语音服务）';
     else if (e.error === 'aborted') return;
     showFeedback('fail', '🎤 ' + msg);
@@ -1254,7 +1254,7 @@ function initWordRecognition() {
     if (e.error === 'not-allowed' || e.error === 'service-not-allowed') msg = '麦克风权限被拒绝，请在地址栏允许麦克风';
     else if (e.error === 'no-speech') msg = '没有听清哦，请大声一点再试一次';
     else if (e.error === 'audio-capture') msg = '没有检测到麦克风设备';
-    else if (e.error === 'network') msg = '网络错误，语音识别不可用';
+    else if (e.error === 'network') msg = '语音识别需连接 Google 服务器，国内网络通常连不上；请改用安卓 App，或接入讯飞/百度等国内语音识别';
     else if (e.error === 'not-available') msg = '设备缺少语音识别服务（请确认已安装 Google 或系统语音服务）';
     else if (e.error === 'aborted') return;
     showWordFeedback('fail', '🎤 ' + msg);
