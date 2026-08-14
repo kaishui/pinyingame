@@ -58,22 +58,35 @@ if (Capacitor.isNativePlatform && Capacitor.isNativePlatform()) {
       if (perm.speechRecognition !== 'granted') { this._fail('not-allowed'); return; }
 
       if (this.onstart) this.onstart();
+
+      const baseOpts = {
+        language: this.lang || 'zh-CN',
+        maxResults: Math.min(this.maxAlternatives || 1, 5),
+        partialResults: false
+      };
+
+      let res = null;
+      // 优先系统语音对话框（安卓最可靠）；若设备没有系统语音 UI（无 Google 语音界面）则回退后台监听
       try {
-        // popup: true 在安卓走系统语音对话框，最可靠（自动开始/结束并返回最终结果，无需手动 stop）
-        const res = await SpeechRecognition.start({
-          language: this.lang || 'zh-CN',
-          maxResults: Math.min(this.maxAlternatives || 1, 5),
-          partialResults: false,
-          popup: true
-        });
-        const matches = (res && res.matches) || [];
-        if (matches.length) {
-          if (this.onresult) this.onresult({ results: [matches.map((t) => ({ transcript: t }))] });
-          if (this.onend) this.onend();
-        } else {
-          this._fail('no-speech');
-        }
+        res = await SpeechRecognition.start(Object.assign({}, baseOpts, { popup: true }));
       } catch (e) {
+        const msg = String((e && e.message) || e || '');
+        if (/no activity|activitynotfound|handle the intent|resolveActivity/i.test(msg)) {
+          try {
+            res = await SpeechRecognition.start(Object.assign({}, baseOpts, { popup: false }));
+          } catch (e2) {
+            this._fail('no-speech'); return;
+          }
+        } else {
+          this._fail('no-speech'); return;
+        }
+      }
+
+      const matches = (res && res.matches) || [];
+      if (matches.length) {
+        if (this.onresult) this.onresult({ results: [matches.map((t) => ({ transcript: t }))] });
+        if (this.onend) this.onend();
+      } else {
         this._fail('no-speech');
       }
     }
