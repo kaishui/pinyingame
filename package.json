@@ -1,0 +1,13 @@
+{
+  "name": "pinyin-warrior",
+  "version": "1.0.0",
+  "description": "拼音小勇士 —— 面向小学生的拼音学习闯关游戏（先听后说，语音识别跟读）",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=14"
+  },
+  "license": "MIT"
+}
