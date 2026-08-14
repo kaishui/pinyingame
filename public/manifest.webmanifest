@@ -1,0 +1,16 @@
+{
+  "name": "拼音小勇士",
+  "short_name": "拼音小勇士",
+  "description": "面向小学生的拼音学习闯关游戏：先听后说、音节总览、流利说刷单词",
+  "lang": "zh-CN",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffd3e6",
+  "theme_color": "#ff8fc0",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

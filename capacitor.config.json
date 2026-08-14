@@ -1,0 +1,12 @@
+{
+  "appId": "com.kaishui.pinyingame",
+  "appName": "拼音小勇士",
+  "webDir": "dist",
+  "backgroundColor": "#ffd3e6",
+  "android": {
+    "allowMixedContent": true
+  },
+  "ios": {
+    "contentInset": "automatic"
+  }
+}

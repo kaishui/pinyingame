@@ -1,49 +1,75 @@
 # 🧚‍♀️ 拼音小勇士
 
-面向 6–9 岁小女生的拼音学习闯关小游戏，卡通粉嫩主题 + 仙女小助手。
-覆盖 **声母、韵母、整体认读音节**，支持 **分年级、分类型、可选难度起点**，
-并提供与 `yinjie.hanyupinyin.cn` 类似的 **汉语拼音音节总览表（横竖均可点击发音）**。
+面向 6–9 岁小女生的拼音学习闯关游戏，卡通粉嫩主题 + 仙女小助手。
+覆盖 **声母、韵母、整体认读音节**，支持 **分年级、分类型、可选难度起点**、
+**音节总览表（横竖可点、四声提示）**，以及 **流利说·刷单词**（随机词库 + 小学课文，无限闯关）。
 
-## 快速开始
+已封装为 **Capacitor 应用**（安卓 + iOS），语音识别在原生端走系统 API、在网页端走 Web Speech API。
 
-纯前端单文件游戏，附零依赖 Node 静态服务器（提供 `localhost` 安全上下文，供浏览器语音识别使用）。
+## 快速开始（网页）
 
 ```bash
-# 1. 安装 Node.js（>= 14）
-# 2. 启动服务器
-node server.js
-# 或者
-npm start
+npm install
 
-# 3. 打开浏览器访问
-#    http://localhost:8080
+# 开发（Vite 热更新，localhost 麦克风可用）
+npm run dev
+
+# 或：构建后由极简 Node 服务器托管
+npm run build
+npm run serve        # http://localhost:8080
 ```
 
-> ⚠️ **重要**：语音识别基于 `Web Speech API`，请使用 **Chrome / Edge**，并 **允许麦克风权限**。
-> 直接双击 `index.html` 用 `file://` 打开通常无法使用麦克风，请通过服务器访问。
+> 网页端语音识别（Web Speech API）需要 **Chrome / Edge** + HTTPS/localhost；
+> iOS Safari 网页不支持语音识别，请用安卓或原生 App。
+
+## 打包安卓 / iOS（Capacitor，已配置）
+
+```bash
+npm run build          # 构建网页到 dist/
+npx cap sync           # 同步网页 + 插件到原生工程
+
+# 安卓：需要 Android Studio + Android SDK
+npx cap open android
+
+# iOS：需要 macOS + Xcode；插件使用 CocoaPods，首次需 pod install
+npx cap open ios
+cd ios/App && pod install
+```
+
+语音识别插件：`@capacitor-community/speech-recognition`（v7）
+- 安卓：系统 `SpeechRecognizer`（已声明 `RECORD_AUDIO` 权限）
+- iOS：系统 `SFSpeechRecognizer`（已在 `Info.plist` 加入语音识别 + 麦克风用途说明）
+
+适配层在 `src/speech-shim.js`：原生环境用插件并模拟 Web Speech API 接口，
+网页环境继续用浏览器原生 `SpeechRecognition`，主程序逻辑无需分支。
 
 ## 功能一览
 
-- **先听后说**：自动/点击播放标准发音（`SpeechSynthesis`，**优先选择女声**，语速稍慢、音调稍高）。
-- **跟读闯关**：点击 🎤 大声跟读，`SpeechRecognition`（`zh-CN`，多候选容错）判定对错；读对得 ⭐，读错可重试。
-- **分年级**：一年级上（声母）/ 一年级下（韵母）/ 二年级（整体认读音节）。
-- **分类型**：声母 / 韵母 / 整体认读 / 全部，可与年级组合筛选。
-- **可选难度起点**：
-  - 🌱 轻松 —— 从第 1 关开始，全程有「读作」提示；
-  - 🌼 进阶 —— 从第 1 关开始，标准闯关；
-  - 🌟 高手 —— 从所选内容最后一关开始，隐藏「读作」提示。
-- **音节总览表**：声母 × 韵母完整音节表（408 个合法音节），**横着点声母、竖着点韵母、点格子听音节**。
-- **可玩性**：过关得 ⭐ + 随机贴纸（贴纸册）、连续答对 🏆 小奖杯、多彩鼓励语、庆祝彩纸、音效。
-- **荣誉证书**：全部通关后输入名字生成证书，可打印；进度与贴纸保存在 `localStorage`。
+- **先听后说**：自动/点击播放标准发音（`SpeechSynthesis`，**优先女声**，语速稍慢、音调稍高）。
+- **跟读闯关**：语音识别判定对错，读对得 ⭐，读错可重试。
+- **分年级 / 分类型 / 难度起点**：一年级上（声母）/ 下（韵母）/ 二年级（整体认读）；轻松 / 进阶 / 高手。
+- **音节总览表**：声母 × 韵母完整音节表（408 个合法音节），横点声母、竖点韵母、点格子听音节；
+  顶部可切换 **一声/二声/三声/四声**，格子显示带声调拼音并朗读对应声调。
+- **流利说 · 刷单词**：🎲 随机词库（无限）/ 📚 课文朗读（小学课文 & 古诗）/ 🍎 词语闯关（经典造句），均可无限续关。
+- **可玩性**：过关得 ⭐ + 随机贴纸、连续答对 🏆、多样鼓励语、庆祝彩纸、音效。
+- **荣誉证书**：全部通关后输入名字生成证书，可打印；进度存 `localStorage`。
+- **PWA**：`manifest.webmanifest` + `sw.js` + 图标，可安装到主屏 / 离线使用。
 
 ## 项目结构
 
 ```
 pinyin-warrior/
-├── package.json   # 项目信息与启动脚本
-├── server.js      # 零依赖 Node 静态服务器
-├── README.md      # 使用说明
-└── index.html     # 游戏本体（单文件：HTML + CSS + JS 全部内联）
+├── index.html              # Vite 入口（HTML + 内联 CSS）
+├── src/main.js             # 游戏逻辑（原单文件内联 JS）
+├── src/speech-shim.js      # 语音识别适配层（Web ↔ Capacitor 原生）
+├── vite.config.mjs         # Vite 构建配置
+├── capacitor.config.json   # Capacitor 配置（appId/webDir）
+├── public/                 # 静态资源（manifest、sw.js、图标）
+├── android/                # 安卓原生工程（cap add 生成）
+├── ios/                    # iOS 原生工程（cap add 生成）
+├── server.js               # 极简 Node 静态服务器（服务 dist/）
+├── tools/make-icons.js     # PWA 图标生成脚本
+└── README.md
 ```
 
 ## 内容覆盖
