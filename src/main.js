@@ -1,4 +1,5 @@
-import { LEVELS, GRADES, TYPES, DIFFS, COLS, ROWS, GROUP_CLASS, GROUP_COLOR, INITIAL_READS, FINAL_READS, Y_SPELL, W_SPELL, SYL_CHAR, TONE_CHAR, WORD_DECK, TEXTBOOK_DECK, HOMO, LATIN, spellSyllable, markTone, toneCharOf } from './data-pinyin.js';
+import { LEVELS, GRADES, TYPES, DIFFS, COLS, ROWS, GROUP_CLASS, GROUP_COLOR, INITIAL_READS, FINAL_READS, Y_SPELL, W_SPELL, SYL_CHAR, TONE_CHAR, WORD_DECK, HOMO, LATIN, spellSyllable, markTone, toneCharOf } from './data-pinyin.js';
+import { TEXTBOOK_DECK, CHINESE_GRADES, CHINESE_UNITS } from './data-chinese.js';
 import './speech-shim.js';
 import { ENGLISH_GRADES, ENGLISH_DECK } from './data-english.js';
 import { MATH_GRADES, MATH_UNITS } from './data-math.js';
@@ -747,6 +748,7 @@ function showWordMenu() {
   stopSpeak();
   switchScreen('word-screen');
   $('word-menu').hidden = false;
+  $('word-textbook').hidden = true;
   $('word-play').hidden = true;
   const cats = $('word-cats');
   cats.innerHTML = '';
@@ -754,7 +756,7 @@ function showWordMenu() {
     const b = document.createElement('button');
     b.className = 'word-cat';
     b.innerHTML = '<div class="ico">' + c.ico + '</div><div class="tt">' + c.tt + '</div><div class="ds">' + c.ds + '</div>';
-    b.onclick = () => chooseWordMode(c.id);
+    b.onclick = () => { if (c.id === 'text') showTextbookGrades(); else chooseWordMode(c.id); };
     cats.appendChild(b);
   });
 }
@@ -1259,6 +1261,105 @@ function showMathFeedback(kind, text) {
 }
 
 /* ============================================================
+ * 十三点七、乘法口诀总览
+ * ============================================================ */
+function numToCn(n) {
+  const d = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
+  if (n < 10) return d[n];
+  if (n < 20) return '十' + (n % 10 === 0 ? '' : d[n % 10]);
+  const t = Math.floor(n / 10), o = n % 10;
+  return d[t] + '十' + (o === 0 ? '' : d[o]);
+}
+function showMulTable() {
+  stopSpeak();
+  switchScreen('mul-screen');
+  renderMulTable();
+}
+function renderMulTable() {
+  const wrap = $('mul-grid');
+  wrap.innerHTML = '';
+  const corner = document.createElement('div');
+  corner.className = 'mul-cell head';
+  corner.textContent = '×';
+  wrap.appendChild(corner);
+  for (let j = 1; j <= 9; j++) {
+    const h = document.createElement('div');
+    h.className = 'mul-cell head';
+    h.textContent = j;
+    wrap.appendChild(h);
+  }
+  for (let i = 1; i <= 9; i++) {
+    const rh = document.createElement('div');
+    rh.className = 'mul-cell head';
+    rh.textContent = i;
+    wrap.appendChild(rh);
+    for (let j = 1; j <= 9; j++) {
+      const c = document.createElement('div');
+      c.className = 'mul-cell';
+      c.textContent = i * j;
+      const ii = i, jj = j;
+      c.onclick = () => { stopSpeak(); speak(numToCn(ii) + '乘' + numToCn(jj) + '等于' + numToCn(ii * jj), 'zh-CN'); };
+      wrap.appendChild(c);
+    }
+  }
+}
+
+/* ============================================================
+ * 十三点八、人教版语文课文（年级 → 单元）
+ * ============================================================ */
+let textGrade = 'g1u';
+let textUnit = 0;
+function showTextbookGrades() {
+  stopSpeak();
+  switchScreen('word-screen');
+  $('word-menu').hidden = true;
+  $('word-textbook').hidden = false;
+  $('word-play').hidden = true;
+  const cats = $('textbook-grade-cats');
+  cats.innerHTML = '';
+  CHINESE_GRADES.forEach(g => {
+    const b = document.createElement('button');
+    b.className = 'word-cat';
+    b.innerHTML = '<div class="ico">' + g.ico + '</div><div class="tt">' + g.name + '</div>';
+    b.onclick = () => showTextbookUnits(g.id);
+    cats.appendChild(b);
+  });
+}
+function showTextbookUnits(gradeId) {
+  textGrade = gradeId;
+  stopSpeak();
+  $('word-menu').hidden = true;
+  $('word-textbook').hidden = false;
+  $('word-play').hidden = true;
+  $('textbook-unit-title').textContent = CHINESE_GRADES.find(g => g.id === gradeId).name + ' · 选择单元';
+  const cats = $('textbook-unit-cats');
+  cats.innerHTML = '';
+  CHINESE_UNITS[gradeId].forEach((u, i) => {
+    const b = document.createElement('button');
+    b.className = 'word-cat';
+    b.innerHTML = '<div class="ico">📘</div><div class="tt">' + u.name + '</div><div class="ds">' + u.items.length + ' 句</div>';
+    b.onclick = () => startTextbookUnit(gradeId, i);
+    cats.appendChild(b);
+  });
+}
+function startTextbookUnit(gradeId, unitIdx) {
+  textGrade = gradeId;
+  textUnit = unitIdx;
+  wordMode = 'text';
+  wordInfinite = false;
+  wordDeck = shuffle(CHINESE_UNITS[gradeId][unitIdx].items.slice());
+  wordIndex = 0; wordScore = 0; wordStreak = 0;
+  setSpeechLang('zh-CN');
+  $('word-menu').hidden = true;
+  $('word-textbook').hidden = true;
+  $('word-play').hidden = false;
+  $('word-mode-label').textContent = '📖 ' + CHINESE_GRADES.find(g => g.id === gradeId).name + ' · ' + CHINESE_UNITS[gradeId][unitIdx].name;
+  renderWord();
+  switchScreen('word-screen');
+  wordDemo();
+}
+
+/* ============================================================
  * 十四、事件绑定与初始化
  * ============================================================ */
 function bindEvents() {
@@ -1267,7 +1368,7 @@ function bindEvents() {
   $('go-cert').addEventListener('click', () => { if (allDone()) showCert(); else toast('🏆 还没全部通关哦，继续加油！'); });
   $('go-words').addEventListener('click', showWordMenu);
   $('word-back-btn').addEventListener('click', () => { stopSpeak(); renderHome(); });
-  $('word-play-back-btn').addEventListener('click', showWordMenu);
+  $('word-play-back-btn').addEventListener('click', () => { if (wordMode === 'text') showTextbookUnits(textGrade); else showWordMenu(); });
   $('word-demo-btn').addEventListener('click', wordDemo);
   $('word-mic-btn').addEventListener('click', onWordMicClick);
   $('go-english').addEventListener('click', showEnglishMenu);
@@ -1276,6 +1377,9 @@ function bindEvents() {
   $('english-demo-btn').addEventListener('click', englishDemo);
   $('english-mic-btn').addEventListener('click', onEnglishMicClick);
   $('go-math').addEventListener('click', showMathMenu);
+  $('go-mul').addEventListener('click', showMulTable);
+  $('mul-back-btn').addEventListener('click', () => { stopSpeak(); renderHome(); });
+  $('textbook-back-btn').addEventListener('click', showWordMenu);
   $('math-back-btn').addEventListener('click', () => { stopSpeak(); renderHome(); });
   $('math-unit-back-btn').addEventListener('click', showMathMenu);
   $('math-play-back-btn').addEventListener('click', () => { if (mathGradeId === 'random') showMathMenu(); else showMathUnits(mathGradeId); });

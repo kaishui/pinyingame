@@ -385,51 +385,6 @@ const WORD_DECK = [
   ['商店','shāng diàn','🏪','商店里商品真多。'],
 ];
 
-/* 小学课文 & 古诗经典句（短语 + 拼音 + emoji + 课文原句） */
-const TEXTBOOK_DECK = [
-  ['秋天','qiū tiān','🍂','天气凉了，树叶黄了，一片片叶子从树上落下来。'],
-  ['天气凉了','tiān qì liáng le','🍃','天气凉了，树叶黄了。'],
-  ['草芽','cǎo yá','🌱','草芽尖尖，他对小鸟说：「我是春天。」'],
-  ['荷叶','hé yè','🪷','荷叶圆圆，他对青蛙说：「我是夏天。」'],
-  ['谷穗','gǔ suì','🌾','谷穗弯弯，他鞠着躬说：「我是秋天。」'],
-  ['雪人','xuě rén','⛄','雪人大肚子一挺，他顽皮地说：「我就是冬天。」'],
-  ['小画家','xiǎo huà jiā','🎨','雪地里来了一群小画家。'],
-  ['小鸡画竹叶','xiǎo jī huà zhú yè','🐔','小鸡画竹叶，小狗画梅花。'],
-  ['小狗画梅花','xiǎo gǒu huà méi huā','🐶','小鸡画竹叶，小狗画梅花。'],
-  ['小小的船','xiǎo xiǎo de chuán','🚢','弯弯的月儿小小的船，小小的船儿两头尖。'],
-  ['弯弯的月儿','wān wān de yuè er','🌙','弯弯的月儿小小的船。'],
-  ['咏鹅','yǒng é','🦢','鹅鹅鹅，曲项向天歌。'],
-  ['白毛浮绿水','bái máo fú lǜ shuǐ','🦢','白毛浮绿水，红掌拨清波。'],
-  ['静夜思','jìng yè sī','🌙','床前明月光，疑是地上霜。'],
-  ['床前明月光','chuáng qián míng yuè guāng','🌙','床前明月光，疑是地上霜。'],
-  ['春晓','chūn xiǎo','🌸','春眠不觉晓，处处闻啼鸟。'],
-  ['春眠不觉晓','chūn mián bù jué xiǎo','🐦','春眠不觉晓，处处闻啼鸟。'],
-  ['悯农','mǐn nóng','🌾','锄禾日当午，汗滴禾下土。'],
-  ['锄禾','chú hé','🌾','锄禾日当午，汗滴禾下土。'],
-  ['江南','jiāng nán','🪷','江南可采莲，莲叶何田田。'],
-  ['采莲','cǎi lián','🪷','江南可采莲，莲叶何田田。'],
-  ['画','huà','🖼️','远看山有色，近听水无声。'],
-  ['远看山有色','yuǎn kàn shān yǒu sè','⛰️','远看山有色，近听水无声。'],
-  ['上学歌','shàng xué gē','🏫','太阳当空照，花儿对我笑。'],
-  ['太阳当空照','tài yáng dāng kōng zhào','☀️','太阳当空照，花儿对我笑。'],
-  ['姓氏歌','xìng shì gē','📖','你姓什么？我姓李。'],
-  ['你姓什么','nǐ xìng shén me','🙋','你姓什么？我姓李。'],
-  ['古对今','gǔ duì jīn','📜','古对今，圆对方。'],
-  ['对韵','duì yùn','📜','古对今，圆对方，严寒对酷暑。'],
-  ['春夏秋冬','chūn xià qiū dōng','🌸','春风吹，夏雨落，秋霜降，冬雪飘。'],
-  ['春风吹','chūn fēng chuī','🌬️','春风吹，夏雨落。'],
-  ['小青蛙','xiǎo qīng wā','🐸','河水清清天气晴，小小青蛙大眼睛。'],
-  ['河水清清','hé shuǐ qīng qīng','🌊','河水清清天气晴。'],
-  ['影子','yǐng zi','🧍','影子在前，影子在后，影子常常跟着我。'],
-  ['前后左右','qián hòu zuǒ yòu','🧭','影子在前，影子在后。'],
-  ['升国旗','shēng guó qí','🇨🇳','五星红旗，我们的国旗。'],
-  ['五星红旗','wǔ xīng hóng qí','🇨🇳','五星红旗，我们的国旗。'],
-  ['日月明','rì yuè míng','☀️','日月明，田力男。'],
-  ['大小多少','dà xiǎo duō shǎo','⚖️','一个大，一个小，一头黄牛一只猫。'],
-  ['比尾巴','bǐ wěi ba','🐒','谁的尾巴长？谁的尾巴短？'],
-  ['过桥','guò qiáo','🌉','小竹桥，摇摇摇，有只小熊来过桥。'],
-  ['小熊','xiǎo xióng','🧸','有只小熊来过桥。'],
-];
 
 function spellSyllable(rowK, final) {
   if (rowK === '∅') return final;
@@ -562,5 +517,5 @@ const LATIN = {
 
 
 export {
-  LEVELS, GRADES, TYPES, DIFFS, COLS, ROWS, GROUP_CLASS, GROUP_COLOR, INITIAL_READS, FINAL_READS, Y_SPELL, W_SPELL, SYL_CHAR, TONE_CHAR, WORD_DECK, TEXTBOOK_DECK, HOMO, LATIN, spellSyllable, markTone, toneCharOf
+  LEVELS, GRADES, TYPES, DIFFS, COLS, ROWS, GROUP_CLASS, GROUP_COLOR, INITIAL_READS, FINAL_READS, Y_SPELL, W_SPELL, SYL_CHAR, TONE_CHAR, WORD_DECK, HOMO, LATIN, spellSyllable, markTone, toneCharOf
 };

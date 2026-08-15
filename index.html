@@ -291,6 +291,20 @@
   .math-option.right { background: #e6faf5; border-color: var(--mint); color: #12806e; }
   .math-option.wrong { background: #fff0f5; border-color: var(--pink); color: #b21d58; }
 
+  /* 乘法口诀表 */
+  .mul-grid {
+    display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; padding: 12px;
+    max-width: 520px; margin: 0 auto;
+  }
+  .mul-cell {
+    aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+    border-radius: 12px; font-weight: 900; font-size: 18px; cursor: pointer;
+    background: #fff; color: var(--purple-deep); box-shadow: 0 2px 0 #e6d4ec;
+    transition: transform .1s ease, background .1s ease;
+  }
+  .mul-cell:hover { background: #ffe0ef; transform: scale(1.06); }
+  .mul-cell.head { background: #f7e3f0; color: var(--pink-deep); cursor: default; font-size: 16px; }
+
   .table-scroll {
     background: rgba(255,255,255,.85); border-radius: 22px; overflow: auto; max-height: 66vh;
     box-shadow: 0 8px 20px rgba(139,110,240,.14); position: relative;
@@ -382,6 +396,9 @@
       </button>
       <button class="entry" id="go-math">
         <div class="ico">🧮</div><div class="tt">数学·选择题</div><div class="ds">小学 1-6 年级 · 选择题闯关</div>
+      </button>
+      <button class="entry" id="go-mul">
+        <div class="ico">🔢</div><div class="tt">乘法口诀</div><div class="ds">九九乘法表 · 点击听口诀</div>
       </button>
       <button class="entry" id="go-cert">
         <div class="ico">🏆</div><div class="tt">荣誉证书</div><div class="ds">全部通关后领取</div>
@@ -484,6 +501,16 @@
       </header>
       <div class="word-cats" id="word-cats"></div>
     </div>
+    <!-- 课文：年级→单元选择 -->
+    <div id="word-textbook" hidden>
+      <header class="overview-head">
+        <div class="back"><button class="btn" id="textbook-back-btn">← 词库</button></div>
+        <div class="title"><h2 id="textbook-unit-title">选择年级</h2><p>人教版语文 · 按单元学习</p></div>
+      </header>
+      <div class="word-cats" id="textbook-grade-cats"></div>
+      <div class="grade-group-label" id="textbook-grade-label"></div>
+      <div class="word-cats" id="textbook-unit-cats"></div>
+    </div>
     <!-- 刷词 -->
     <div id="word-play" hidden>
       <header class="level-head">
@@ -584,6 +611,17 @@
         <div class="feedback" id="math-feedback"></div>
         <div class="streak-bar" id="math-streak-bar"></div>
       </div>
+    </div>
+  </section>
+
+  <!-- ============ 乘法口诀总览 ============ -->
+  <section id="mul-screen" class="screen">
+    <header class="overview-head">
+      <div class="back"><button class="btn" id="mul-back-btn">← 返回</button></div>
+      <div class="title"><h2>🔢 乘法口诀</h2><p>九九乘法表 · 点格子听口诀</p></div>
+    </header>
+    <div class="table-scroll" style="max-height:none;">
+      <div class="mul-grid" id="mul-grid"></div>
     </div>
   </section>
 
