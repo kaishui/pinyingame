@@ -36,6 +36,22 @@ function floatTo16BitPCM(float32) {
   return out;
 }
 
+// 线性插值重采样到 16kHz（部分浏览器不理会 sampleRate 选项）
+function resampleTo16k(input, inputRate) {
+  if (inputRate <= 16000) return input;
+  const ratio = inputRate / 16000;
+  const outLen = Math.round(input.length / ratio);
+  const out = new Float32Array(outLen);
+  for (let i = 0; i < outLen; i++) {
+    const src = i * ratio;
+    const i0 = Math.floor(src);
+    const i1 = Math.min(i0 + 1, input.length - 1);
+    const frac = src - i0;
+    out[i] = input[i0] * (1 - frac) + input[i1] * frac;
+  }
+  return out;
+}
+
 // 讯飞 IAT 二进制帧：首字节 status（0=首帧 1=中间帧 2=末帧）+ 小端 Int16 PCM
 function buildFrame(status, int16) {
   const bytes = new Uint8Array(1 + int16.length * 2);
@@ -77,9 +93,14 @@ export class XunfeiSpeechRecognition {
       this._stream = stream;
       const ctx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
       this._ctx = ctx;
+      if (ctx.state === 'suspended') { try { await ctx.resume(); } catch (e) {} }
+      const inputRate = ctx.sampleRate || 16000;
       const source = ctx.createMediaStreamSource(stream);
       const processor = ctx.createScriptProcessor(4096, 1, 1);
       this._processor = processor;
+      // 静音节点：避免把麦克风声音回放出来（回声）
+      const mute = ctx.createGain();
+      mute.gain.value = 0;
 
       const url = await xfAuthUrl();
       const ws = new WebSocket(url);
@@ -103,12 +124,13 @@ export class XunfeiSpeechRecognition {
 
       processor.onaudioprocess = (e) => {
         if (ended) return;
-        const input = e.inputBuffer.getChannelData(0);
+        const raw = e.inputBuffer.getChannelData(0);
+        const input = (inputRate === 16000) ? raw : resampleTo16k(raw, inputRate);
         const int16 = floatTo16BitPCM(input);
         let sum = 0;
         for (let i = 0; i < int16.length; i++) sum += int16[i] * int16[i];
         const rms = Math.sqrt(sum / int16.length);
-        if (rms > 350) { hasSpeech = true; silent = 0; }
+        if (rms > 150) { hasSpeech = true; silent = 0; }
         else if (hasSpeech) { silent++; }
 
         const CHUNK = 640; // 40ms
@@ -119,14 +141,23 @@ export class XunfeiSpeechRecognition {
           if (ws.readyState === 1) ws.send(buildFrame(status, slice));
         }
         buffers++;
-        // 静音约 2 秒或最长约 10 秒后结束
-        if ((hasSpeech && silent >= 8) || buffers >= 40) {
+        // 静音约 1.8 秒或最长约 12 秒后结束
+        if ((hasSpeech && silent >= 7) || buffers >= 50) {
           ended = true;
           if (ws.readyState === 1) ws.send(buildFrame(2, new Int16Array(0)));
         }
       };
       source.connect(processor);
-      processor.connect(ctx.destination);
+      processor.connect(mute);
+      mute.connect(ctx.destination);
+
+      // 安全兜底：15 秒后强制结束，避免一直卡住
+      setTimeout(() => {
+        if (!ended && !this._finished && ws.readyState === 1) {
+          ended = true;
+          ws.send(buildFrame(2, new Int16Array(0)));
+        }
+      }, 15000);
     } catch (e) {
       this._fail('audio-capture');
     }

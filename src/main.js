@@ -186,6 +186,7 @@ function drainSpeak() {
   const watchdog = setTimeout(() => { speechSynthesis.resume(); setTimeout(finish, 600); }, 8000);
   u.addEventListener('end', () => clearTimeout(watchdog));
   u.addEventListener('error', () => clearTimeout(watchdog));
+  speechSynthesis.resume();
   speechSynthesis.speak(u);
 }
 function stopSpeak() {
