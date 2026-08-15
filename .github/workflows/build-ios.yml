@@ -13,6 +13,8 @@ on:
 
 jobs:
   build-ios:
+    permissions:
+      contents: write
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
