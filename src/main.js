@@ -1381,14 +1381,13 @@ async function showRank() {
 async function refreshRank() {
   const list = $('rank-list');
   list.innerHTML = '';
-  if (!isLeaderboardReady()) {
-    list.innerHTML = '<div class="rank-empty">⚠️ 尚未配置 Supabase anon 密钥（见 .env 的 VITE_SUPABASE_ANON_KEY）</div>';
-    $('rank-my').textContent = '';
-    return;
-  }
   $('rank-my').textContent = '加载中…';
   const scores = await fetchScores(20);
   $('rank-my').textContent = '';
+  if (scores === null) {
+    list.innerHTML = '<div class="rank-empty">⚠️ 无法连接排行榜服务（请确认已启动 node server.js 并在 .env 配置 DATABASE_URL）</div>';
+    return;
+  }
   if (!scores.length) {
     list.innerHTML = '<div class="rank-empty">还没有成绩，快来上传你的分数吧！</div>';
     return;
