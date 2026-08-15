@@ -15,9 +15,10 @@ if (Capacitor.isNativePlatform && Capacitor.isNativePlatform()) {
   window.__TTS_NATIVE__ = true;
   // 预热：触发引擎异步初始化，避免首句发音被丢弃
   try { TextToSpeech.getSupportedLanguages().catch(() => {}); } catch (e) {}
-  window.__ttsSpeak = (text, done) => {
+  window.__ttsSpeak = (text, done, lang) => {
+    const L = lang || 'zh-CN';
     const attempt = (n) => {
-      TextToSpeech.speak({ text, lang: 'zh-CN', rate: 0.6, pitch: 1.1, volume: 1.0 })
+      TextToSpeech.speak({ text, lang: L, rate: L === 'en-US' ? 0.85 : 0.6, pitch: 1.1, volume: 1.0 })
         .then(() => { if (done) done(); })
         .catch((e) => {
           const msg = String((e && e.message) || e || '');
@@ -60,7 +61,7 @@ if (Capacitor.isNativePlatform && Capacitor.isNativePlatform()) {
       if (this.onstart) this.onstart();
 
       const baseOpts = {
-        language: this.lang || 'zh-CN',
+        language: window.__SPEECH_LANG__ || this.lang || 'zh-CN',
         maxResults: Math.min(this.maxAlternatives || 1, 5),
         partialResults: false
       };

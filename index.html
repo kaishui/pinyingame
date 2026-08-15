@@ -268,6 +268,28 @@
   .word-cat .ico { font-size: 46px; line-height: 1; }
   .word-cat .tt { font-size: 18px; margin-top: 8px; }
   .word-cat .ds { font-size: 12px; color: var(--ink-soft); font-weight: 700; margin-top: 4px; }
+  .grade-group-label {
+    grid-column: 1 / -1; text-align: center; font-size: 13px; font-weight: 900;
+    color: var(--purple-deep); margin-top: 6px; letter-spacing: 2px;
+  }
+  .word-cat.random { background: linear-gradient(180deg,#fff0f8,#ffd6e8); }
+
+  /* 英语刷句子 */
+  .english-sentence { font-size: clamp(22px, 5.5vw, 34px); font-weight: 900; line-height: 1.4; color: var(--purple); margin-top: 14px; word-break: break-word; }
+  .english-translation { font-size: 16px; color: var(--ink-soft); font-weight: 700; margin-top: 10px; }
+
+  /* 数学选择题 */
+  .math-question { font-size: clamp(26px, 7vw, 40px); font-weight: 900; color: var(--pink-deep); margin: 16px 0; line-height: 1.4; }
+  .math-options { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  @media (max-width: 400px) { .math-options { grid-template-columns: 1fr; } }
+  .math-option {
+    background: #f6f0ff; border: 3px solid #e5d9ff; border-radius: 18px; padding: 16px 10px;
+    font-size: 22px; font-weight: 900; color: var(--purple-deep); transition: transform .1s ease, background .1s ease;
+  }
+  .math-option:hover { background: #ece1ff; transform: translateY(-2px); }
+  .math-option:disabled { cursor: default; }
+  .math-option.right { background: #e6faf5; border-color: var(--mint); color: #12806e; }
+  .math-option.wrong { background: #fff0f5; border-color: var(--pink); color: #b21d58; }
 
   .table-scroll {
     background: rgba(255,255,255,.85); border-radius: 22px; overflow: auto; max-height: 66vh;
@@ -354,6 +376,12 @@
       </button>
       <button class="entry" id="go-words">
         <div class="ico">🗣️</div><div class="tt">流利说·刷单词</div><div class="ds">词语 + 经典造句 · 跟读闯关</div>
+      </button>
+      <button class="entry" id="go-english">
+        <div class="ico">🔤</div><div class="tt">英语·流利说</div><div class="ds">小学到高中 · 刷句子 · 分年级</div>
+      </button>
+      <button class="entry" id="go-math">
+        <div class="ico">🧮</div><div class="tt">数学·选择题</div><div class="ds">小学 1-6 年级 · 选择题闯关</div>
       </button>
       <button class="entry" id="go-cert">
         <div class="ico">🏆</div><div class="tt">荣誉证书</div><div class="ds">全部通关后领取</div>
@@ -482,6 +510,72 @@
         </div>
         <div class="feedback" id="word-feedback"></div>
         <div class="streak-bar" id="word-streak-bar"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 英语流利说刷句子 ============ -->
+  <section id="english-screen" class="screen">
+    <div id="english-menu">
+      <header class="overview-head">
+        <div class="back"><button class="btn" id="english-back-btn">← 返回</button></div>
+        <div class="title"><h2>🔤 英语 · 流利说</h2><p>小学到高中 · 分年级刷句子 · 先听再读</p></div>
+      </header>
+      <div class="word-cats" id="english-cats"></div>
+    </div>
+    <div id="english-play" hidden>
+      <header class="level-head">
+        <div class="back"><button class="btn" id="english-play-back-btn">← 年级</button></div>
+        <div class="level-title-wrap">
+          <div class="level-cat" id="english-mode-label">🔤 英语</div>
+          <div class="level-title">听一听，大声读句子！</div>
+        </div>
+        <div class="level-score">✅ <span id="english-score">0</span></div>
+      </header>
+      <div class="progress-track" id="english-progress-wrap"><div class="progress-fill" id="english-progress-fill"></div></div>
+      <div class="progress-dots" id="english-progress-dots"></div>
+      <div class="learn-card">
+        <span class="q-label" id="english-q-label"></span>
+        <div class="english-sentence" id="english-sentence"></div>
+        <div class="english-translation" id="english-translation"></div>
+        <div class="demo-row"><button class="btn amber" id="english-demo-btn">🔊 听示范</button></div>
+        <div class="mic-zone">
+          <button class="mic-btn" id="english-mic-btn" title="点击跟读">🎤</button>
+          <div class="wave" id="english-wave"><span></span><span></span><span></span><span></span><span></span></div>
+          <div class="mic-hint" id="english-mic-hint">点击麦克风，大声读句子</div>
+        </div>
+        <div class="feedback" id="english-feedback"></div>
+        <div class="streak-bar" id="english-streak-bar"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 数学选择题 ============ -->
+  <section id="math-screen" class="screen">
+    <div id="math-menu">
+      <header class="overview-head">
+        <div class="back"><button class="btn" id="math-back-btn">← 返回</button></div>
+        <div class="title"><h2>🧮 数学 · 选择题</h2><p>小学 1-6 年级 · 选择题闯关</p></div>
+      </header>
+      <div class="word-cats" id="math-cats"></div>
+    </div>
+    <div id="math-play" hidden>
+      <header class="level-head">
+        <div class="back"><button class="btn" id="math-play-back-btn">← 年级</button></div>
+        <div class="level-title-wrap">
+          <div class="level-cat" id="math-mode-label">🧮 数学</div>
+          <div class="level-title">选出正确答案！</div>
+        </div>
+        <div class="level-score">✅ <span id="math-score">0</span></div>
+      </header>
+      <div class="progress-track" id="math-progress-wrap"><div class="progress-fill" id="math-progress-fill"></div></div>
+      <div class="progress-dots" id="math-progress-dots"></div>
+      <div class="learn-card">
+        <span class="q-label" id="math-q-label"></span>
+        <div class="math-question" id="math-question"></div>
+        <div class="math-options" id="math-options"></div>
+        <div class="feedback" id="math-feedback"></div>
+        <div class="streak-bar" id="math-streak-bar"></div>
       </div>
     </div>
   </section>

@@ -1,4 +1,6 @@
 import './speech-shim.js';
+import { ENGLISH_GRADES, ENGLISH_DECK } from './data-english.js';
+import { MATH_GRADES, MATH_DECK } from './data-math.js';
 
 'use strict';
 
@@ -582,6 +584,24 @@ let wordMode = 'word';        // word | text | random
 let wordInfinite = false;
 let currentEntry = null;      // 当前展示的词语卡
 
+// 英语刷句子
+let englishGrade = 'random';
+let englishDeck = [];
+let englishIndex = 0;
+let englishScore = 0;
+let englishStreak = 0;
+let englishHeard = false;
+let englishInfinite = false;
+let currentEnglish = null;
+// 数学选择题
+let mathGrade = 'random';
+let mathDeck = [];
+let mathIndex = 0;
+let mathScore = 0;
+let mathStreak = 0;
+let mathInfinite = false;
+let currentMath = null;
+
 function defaultState() {
   return {
     name: '', unlocked: 0, done: {}, stars: {}, partial: null,
@@ -675,26 +695,29 @@ if ('speechSynthesis' in window) {
   loadVoices();
   speechSynthesis.onvoiceschanged = loadVoices;
 }
-function pickVoice() {
-  const zh = voices.filter(v => /^zh/i.test(v.lang) || /chinese/i.test(v.name));
-  if (!zh.length) return null;
+function pickVoice(lang) {
+  const want = (lang === 'en-US') ? /^en[-_]/i : /^zh/i;
+  const list = voices.filter(v => want.test(v.lang));
+  if (!list.length) return null;
+  if (lang === 'en-US') return list.find(v => /en[-_]US/i.test(v.lang)) || list[0] || null;
   // 优先挑选女声（常见中文女声引擎名）
   const female = /huihui|yaoyao|xiaoxiao|meijia|tingting|sinji|shanshan|lili|female|girl|女/i;
-  return zh.find(v => female.test(v.name)) ||
-         zh.find(v => /zh[-_]CN/i.test(v.lang)) ||
-         zh[0] || null;
+  return list.find(v => female.test(v.name)) ||
+         list.find(v => /zh[-_]CN/i.test(v.lang)) ||
+         list[0] || null;
 }
 let speakQueue = [];
 let isSpeaking = false;
-function speak(text) {
+function speak(text, lang) {
   if (!text) return;
-  speakQueue.push(text);
+  speakQueue.push({ text, lang: lang || 'zh-CN' });
   drainSpeak();
 }
 function drainSpeak() {
   if (isSpeaking || speakQueue.length === 0) return;
   isSpeaking = true;
-  const text = speakQueue.shift();
+  const item = speakQueue.shift();
+  const text = item.text, lang = item.lang;
   let done = false;
   const finish = () => { if (done) return; done = true; isSpeaking = false; drainSpeak(); };
 
@@ -702,7 +725,7 @@ function drainSpeak() {
   if (window.__TTS_NATIVE__ && window.__ttsSpeak) {
     let safety = setTimeout(() => finish(), Math.max(3000, text.length * 400 + 2500));
     try {
-      window.__ttsSpeak(text, () => { clearTimeout(safety); finish(); });
+      window.__ttsSpeak(text, () => { clearTimeout(safety); finish(); }, lang);
     } catch (e) { clearTimeout(safety); finish(); }
     return;
   }
@@ -710,15 +733,15 @@ function drainSpeak() {
   // 网页：用 Web Speech API
   if (!('speechSynthesis' in window)) { finish(); return; }
   const u = new SpeechSynthesisUtterance(text);
-  u.lang = 'zh-CN';
-  const v = pickVoice();
+  u.lang = lang;
+  const v = pickVoice(lang);
   if (v) u.voice = v;
-  u.rate = 0.7;
+  u.rate = lang === 'en-US' ? 0.85 : 0.7;
   u.pitch = 1.15;   // 稍高音调，更贴近女生/儿童嗓音
   u.volume = 1;
   u.onend = finish;
   u.onerror = finish;
-  const watchdog = setTimeout(() => { speechSynthesis.resume(); setTimeout(finish, 600); }, 6000);
+  const watchdog = setTimeout(() => { speechSynthesis.resume(); setTimeout(finish, 600); }, 8000);
   u.addEventListener('end', () => clearTimeout(watchdog));
   u.addEventListener('error', () => clearTimeout(watchdog));
   speechSynthesis.speak(u);
@@ -780,6 +803,11 @@ function playFailSound() {
  * 八、语音识别与判定
  * ============================================================ */
 function getSR() { return window.SpeechRecognition || window.webkitSpeechRecognition; }
+let speechLang = 'zh-CN';
+function setSpeechLang(lang) {
+  speechLang = lang || 'zh-CN';
+  window.__SPEECH_LANG__ = speechLang;
+}
 let recognition = null;
 let recognizing = false;
 
@@ -787,7 +815,7 @@ function initRecognition() {
   const SR = getSR();
   if (!SR) return null;
   const r = new SR();
-  r.lang = 'zh-CN';
+  r.lang = speechLang;
   r.continuous = false;
   r.interimResults = false;
   r.maxAlternatives = 5;
@@ -915,6 +943,7 @@ function levelComplete() {
 function enterLevel(i) {
   if (i < scope.lo || i >= scope.hi) return;
   if (!isUnlocked(i)) { toast('🔒 先完成前面的关卡哦'); return; }
+  setSpeechLang('zh-CN');
   currentLevel = i;
   const items = LEVELS[i].items;
   currentItem = (state.partial && state.partial.level === i)
@@ -1236,7 +1265,7 @@ function initWordRecognition() {
   const SR = getSR();
   if (!SR) return null;
   const r = new SR();
-  r.lang = 'zh-CN';
+  r.lang = speechLang;
   r.continuous = false;
   r.interimResults = false;
   r.maxAlternatives = 5;
@@ -1283,6 +1312,7 @@ function showWordMenu() {
   });
 }
 function chooseWordMode(mode) {
+  setSpeechLang('zh-CN');
   wordMode = mode;
   wordInfinite = (mode === 'random');
   wordScore = 0; wordStreak = 0; wordIndex = 0;
@@ -1432,6 +1462,316 @@ function updateCertText() {
 }
 
 /* ============================================================
+ * 十三点五、英语流利说 · 刷句子
+ * ============================================================ */
+function judgeEnglish(target, recognized) {
+  const norm = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9'\s]/g, ' ').replace(/\s+/g, ' ').trim();
+  const t = norm(target);
+  const r = norm(recognized);
+  if (!t || !r) return false;
+  if (r.indexOf(t) !== -1) return true;
+  const tw = t.split(' ').filter(Boolean);
+  const rw = r.split(' ').filter(Boolean);
+  let hit = 0;
+  for (const w of tw) { if (rw.indexOf(w) !== -1) hit++; }
+  return tw.length > 0 && (hit / tw.length) >= 0.6;
+}
+function showEnglishMenu() {
+  stopSpeak();
+  switchScreen('english-screen');
+  $('english-menu').hidden = false;
+  $('english-play').hidden = true;
+  const cats = $('english-cats');
+  cats.innerHTML = '';
+  ['小学', '初中', '高中'].forEach(g => {
+    const label = document.createElement('div');
+    label.className = 'grade-group-label';
+    label.textContent = g;
+    cats.appendChild(label);
+    ENGLISH_GRADES.filter(x => x.group === g).forEach(gr => {
+      const b = document.createElement('button');
+      b.className = 'word-cat';
+      b.innerHTML = '<div class="tt">' + gr.name + '</div>';
+      b.onclick = () => startEnglishMode(gr.id);
+      cats.appendChild(b);
+    });
+  });
+  const rb = document.createElement('button');
+  rb.className = 'word-cat random';
+  rb.innerHTML = '<div class="ico">🎲</div><div class="tt">随机混合</div>';
+  rb.onclick = () => startEnglishMode('random');
+  cats.appendChild(rb);
+}
+function startEnglishMode(gradeId) {
+  englishGrade = gradeId;
+  englishInfinite = (gradeId === 'random');
+  englishScore = 0; englishStreak = 0; englishIndex = 0;
+  englishDeck = englishInfinite
+    ? Object.keys(ENGLISH_DECK).reduce((a, k) => a.concat(ENGLISH_DECK[k]), [])
+    : shuffle(ENGLISH_DECK[gradeId].slice());
+  setSpeechLang('en-US');
+  $('english-menu').hidden = true;
+  $('english-play').hidden = false;
+  $('english-mode-label').textContent = '🔤 ' + (ENGLISH_GRADES.find(g => g.id === gradeId) || { name: '' }).name;
+  renderEnglish();
+  switchScreen('english-screen');
+  englishDemo();
+}
+function currentEnglishEntry() {
+  if (englishInfinite) return englishDeck[Math.floor(Math.random() * englishDeck.length)];
+  return englishDeck[englishIndex];
+}
+function renderEnglish() {
+  currentEnglish = currentEnglishEntry();
+  const e = currentEnglish;
+  $('english-q-label').textContent = englishInfinite
+    ? '🎲 随机 · 已读对 ' + englishScore + ' 句 · 无限继续'
+    : '第 ' + (englishIndex + 1) + ' / ' + englishDeck.length + ' 句';
+  $('english-sentence').textContent = e[0];
+  $('english-translation').textContent = e[1];
+  $('english-score').textContent = englishScore;
+  $('english-progress-wrap').hidden = englishInfinite;
+  $('english-progress-dots').hidden = englishInfinite;
+  if (!englishInfinite) {
+    $('english-progress-fill').style.width = (englishIndex / englishDeck.length * 100) + '%';
+    const dots = $('english-progress-dots');
+    dots.innerHTML = '';
+    englishDeck.forEach((_, i) => {
+      const d = document.createElement('div');
+      d.className = 'pdot ' + (i < englishIndex ? 'done' : (i === englishIndex ? 'current' : ''));
+      dots.appendChild(d);
+    });
+  }
+  englishHeard = false;
+  $('english-mic-hint').textContent = '先听示范，再跟读哦';
+  $('english-feedback').className = 'feedback';
+  $('english-feedback').textContent = '';
+  updateEnglishStreak();
+  setEnglishRecording(false);
+}
+function englishDemo() {
+  englishHeard = true;
+  $('english-mic-hint').textContent = '点击麦克风，大声读句子';
+  const e = currentEnglish;
+  stopSpeak();
+  speak(e[0], 'en-US');
+}
+function updateEnglishStreak() {
+  const bar = $('english-streak-bar');
+  if (englishStreak >= 2) {
+    bar.innerHTML = englishStreak >= 3
+      ? '<span class="trophy">🏆</span> 连续答对 ' + englishStreak + ' 次！获得小奖杯！'
+      : '🔥 连续答对 ' + englishStreak + ' 次！';
+  } else { bar.innerHTML = ''; }
+}
+function setEnglishRecording(on) {
+  document.body.classList.toggle('recording', on);
+  $('english-mic-btn').disabled = on;
+}
+let englishRecognition = null;
+function initEnglishRecognition() {
+  const SR = getSR();
+  if (!SR) return null;
+  const r = new SR();
+  r.lang = 'en-US';
+  r.continuous = false;
+  r.interimResults = false;
+  r.maxAlternatives = 5;
+  r.onresult = (e) => {
+    const texts = [];
+    for (let i = 0; i < e.results.length; i++) {
+      const res = e.results[i];
+      for (let j = 0; j < res.length; j++) texts.push(res[j].transcript);
+    }
+    handleEnglishResult(texts);
+  };
+  r.onerror = (e) => {
+    setEnglishRecording(false);
+    let msg = '识别出错了，请再试一次';
+    if (e.error === 'not-allowed' || e.error === 'service-not-allowed') msg = '麦克风权限被拒绝，请在地址栏允许麦克风';
+    else if (e.error === 'no-speech') msg = '没有听清哦，请大声一点再试一次';
+    else if (e.error === 'audio-capture') msg = '没有检测到麦克风设备';
+    else if (e.error === 'network') msg = '语音识别需连接 Google 服务器，国内网络通常连不上；请改用安卓 App，或接入讯飞/百度等国内语音识别';
+    else if (e.error === 'not-available') msg = '设备缺少语音识别服务（请确认已安装 Google 或系统语音服务）';
+    else if (e.error === 'aborted') return;
+    showEnglishFeedback('fail', '🎤 ' + msg);
+  };
+  r.onend = () => setEnglishRecording(false);
+  return r;
+}
+async function onEnglishMicClick() {
+  if (!englishHeard) { toast('👂 先听一听示范，再跟读哦！'); englishDemo(); return; }
+  if (!getSR()) { showEnglishFeedback('fail', '⚠️ 当前浏览器不支持语音识别，请使用 Chrome / Edge'); return; }
+  if (!window.__SPEECH_NATIVE__ && !(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) {
+    showEnglishFeedback('fail', '🔒 当前非安全环境（需 HTTPS 或 localhost），浏览器禁用了麦克风');
+    return;
+  }
+  startEnglishRecognition();
+}
+function startEnglishRecognition() {
+  stopSpeak();
+  setSpeechLang('en-US');
+  if (!englishRecognition) englishRecognition = initEnglishRecognition();
+  if (!englishRecognition) return;
+  try {
+    setEnglishRecording(true);
+    $('english-mic-hint').textContent = '👂 正在聆听，请大声读…';
+    englishRecognition.start();
+  } catch (e) {
+    setEnglishRecording(false);
+    showEnglishFeedback('fail', '🎤 启动识别失败，请重试');
+  }
+}
+function handleEnglishResult(texts) {
+  const target = currentEnglish ? currentEnglish[0] : '';
+  const ok = texts.some(t => judgeEnglish(target, t));
+  const shown = (texts[0] || '').trim();
+  if (ok) englishCorrect(shown); else englishWrong(shown);
+}
+function englishCorrect(shown) {
+  englishScore++; englishStreak++;
+  updateEnglishStreak();
+  playSuccessSound();
+  speak(rnd(PRAISES), 'zh-CN');
+  const label = shown ? ('你读的是「' + shown + '」') : '';
+  showEnglishFeedback('success', '✅ 读对了！' + label);
+  burstConfetti();
+  setTimeout(() => {
+    if (!englishInfinite && englishIndex + 1 >= englishDeck.length) englishRoundComplete();
+    else { englishIndex++; renderEnglish(); englishDemo(); }
+  }, 1500);
+}
+function englishWrong(shown) {
+  englishStreak = 0;
+  updateEnglishStreak();
+  playFailSound();
+  speak('Try again!', 'en-US');
+  const label = shown ? ('听到：「' + shown + '」') : '';
+  showEnglishFeedback('fail', '❌ 再试一次吧 ' + label);
+}
+function englishRoundComplete() {
+  playSuccessSound();
+  speak('Great job!', 'en-US');
+  showEnglishFeedback('success', '🎉 本轮读完！累计读对 ' + englishScore + ' 句，再来一轮！');
+  burstConfetti();
+  setTimeout(() => { englishIndex = 0; englishDeck = shuffle(englishDeck); renderEnglish(); englishDemo(); }, 2400);
+}
+function showEnglishFeedback(kind, text) {
+  const f = $('english-feedback');
+  f.className = 'feedback show ' + kind;
+  f.textContent = text;
+}
+
+/* ============================================================
+ * 十三点六、数学选择题
+ * ============================================================ */
+function showMathMenu() {
+  stopSpeak();
+  switchScreen('math-screen');
+  $('math-menu').hidden = false;
+  $('math-play').hidden = true;
+  const cats = $('math-cats');
+  cats.innerHTML = '';
+  MATH_GRADES.forEach(g => {
+    const b = document.createElement('button');
+    b.className = 'word-cat';
+    b.innerHTML = '<div class="ico">' + g.ico + '</div><div class="tt">' + g.name + '</div>';
+    b.onclick = () => startMathMode(g.id);
+    cats.appendChild(b);
+  });
+}
+function startMathMode(gradeId) {
+  mathGrade = gradeId;
+  mathInfinite = (gradeId === 'random');
+  mathScore = 0; mathStreak = 0; mathIndex = 0;
+  mathDeck = mathInfinite
+    ? Object.keys(MATH_DECK).reduce((a, k) => a.concat(MATH_DECK[k]), [])
+    : shuffle(MATH_DECK[gradeId].slice());
+  $('math-menu').hidden = true;
+  $('math-play').hidden = false;
+  $('math-mode-label').textContent = '🧮 ' + (MATH_GRADES.find(g => g.id === gradeId) || { name: '' }).name;
+  renderMath();
+  switchScreen('math-screen');
+}
+function currentMathEntry() {
+  if (mathInfinite) return mathDeck[Math.floor(Math.random() * mathDeck.length)];
+  return mathDeck[mathIndex];
+}
+function renderMath() {
+  currentMath = currentMathEntry();
+  const q = currentMath;
+  $('math-q-label').textContent = mathInfinite
+    ? '🎲 随机 · 已答对 ' + mathScore + ' 题 · 无限继续'
+    : '第 ' + (mathIndex + 1) + ' / ' + mathDeck.length + ' 题';
+  $('math-question').textContent = q.q;
+  $('math-score').textContent = mathScore;
+  $('math-progress-wrap').hidden = mathInfinite;
+  $('math-progress-dots').hidden = mathInfinite;
+  if (!mathInfinite) {
+    $('math-progress-fill').style.width = (mathIndex / mathDeck.length * 100) + '%';
+  }
+  const opts = $('math-options');
+  opts.innerHTML = '';
+  q.opts.forEach((o, i) => {
+    const b = document.createElement('button');
+    b.className = 'math-option';
+    b.textContent = o;
+    b.onclick = () => answerMath(i);
+    opts.appendChild(b);
+  });
+  $('math-feedback').className = 'feedback';
+  $('math-feedback').textContent = '';
+  updateMathStreak();
+}
+function answerMath(i) {
+  const q = currentMath;
+  const buttons = $('math-options').querySelectorAll('button');
+  buttons.forEach(b => b.disabled = true);
+  if (i === q.ans) {
+    buttons[i].classList.add('right');
+    mathScore++; mathStreak++;
+    updateMathStreak();
+    playSuccessSound();
+    showMathFeedback('success', '✅ 答对了！' + q.opts[q.ans]);
+    burstConfetti();
+    setTimeout(() => {
+      if (!mathInfinite && mathIndex + 1 >= mathDeck.length) mathRoundComplete();
+      else { mathIndex++; renderMath(); }
+    }, 1200);
+  } else {
+    buttons[i].classList.add('wrong');
+    buttons[q.ans].classList.add('right');
+    mathStreak = 0;
+    updateMathStreak();
+    playFailSound();
+    showMathFeedback('fail', '❌ 正确答案是 ' + q.opts[q.ans]);
+    setTimeout(() => {
+      if (!mathInfinite && mathIndex + 1 >= mathDeck.length) mathRoundComplete();
+      else { mathIndex++; renderMath(); }
+    }, 1800);
+  }
+}
+function mathRoundComplete() {
+  playSuccessSound();
+  showMathFeedback('success', '🎉 本轮完成！累计答对 ' + mathScore + ' 题，再来一轮！');
+  burstConfetti();
+  setTimeout(() => { mathIndex = 0; mathDeck = shuffle(mathDeck); renderMath(); }, 2000);
+}
+function updateMathStreak() {
+  const bar = $('math-streak-bar');
+  if (mathStreak >= 2) {
+    bar.innerHTML = mathStreak >= 3
+      ? '<span class="trophy">🏆</span> 连续答对 ' + mathStreak + ' 题！'
+      : '🔥 连续答对 ' + mathStreak + ' 题！';
+  } else { bar.innerHTML = ''; }
+}
+function showMathFeedback(kind, text) {
+  const f = $('math-feedback');
+  f.className = 'feedback show ' + kind;
+  f.textContent = text;
+}
+
+/* ============================================================
  * 十四、事件绑定与初始化
  * ============================================================ */
 function bindEvents() {
@@ -1443,6 +1783,14 @@ function bindEvents() {
   $('word-play-back-btn').addEventListener('click', showWordMenu);
   $('word-demo-btn').addEventListener('click', wordDemo);
   $('word-mic-btn').addEventListener('click', onWordMicClick);
+  $('go-english').addEventListener('click', showEnglishMenu);
+  $('english-back-btn').addEventListener('click', () => { stopSpeak(); renderHome(); });
+  $('english-play-back-btn').addEventListener('click', showEnglishMenu);
+  $('english-demo-btn').addEventListener('click', englishDemo);
+  $('english-mic-btn').addEventListener('click', onEnglishMicClick);
+  $('go-math').addEventListener('click', showMathMenu);
+  $('math-back-btn').addEventListener('click', () => { stopSpeak(); renderHome(); });
+  $('math-play-back-btn').addEventListener('click', showMathMenu);
   $('back-btn').addEventListener('click', () => { stopSpeak(); renderMap(); });
   $('map-home-btn').addEventListener('click', () => { stopSpeak(); renderHome(); });
   $('map-start-btn').addEventListener('click', () => { computeScope(); if (!scope.empty) enterLevel(scope.start); });
