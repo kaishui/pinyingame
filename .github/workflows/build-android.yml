@@ -32,6 +32,8 @@ jobs:
           VITE_XF_APPID: ${{ secrets.VITE_XF_APPID }}
           VITE_XF_APIKEY: ${{ secrets.VITE_XF_APIKEY }}
           VITE_XF_APISECRET: ${{ secrets.VITE_XF_APISECRET }}
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
         run: npm run build
 
       - name: Sync Capacitor
@@ -43,17 +45,21 @@ jobs:
       - name: Accept SDK licenses
         run: yes | sdkmanager --licenses >/dev/null 2>&1 || true
 
-      - name: Build debug APK
-        run: cd android && ./gradlew assembleDebug --no-daemon
+      - name: Build debug & release APK
+        run: cd android && ./gradlew assembleDebug assembleRelease --no-daemon
 
-      - name: Upload APK artifact
+      - name: Upload APK artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: android-debug-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: android-apks
+          path: |
+            android/app/build/outputs/apk/debug/app-debug.apk
+            android/app/build/outputs/apk/release/app-release.apk
 
-      - name: Attach APK to release (on tag)
+      - name: Attach APKs to release (on tag)
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: android/app/build/outputs/apk/debug/app-debug.apk
+          files: |
+            android/app/build/outputs/apk/debug/app-debug.apk
+            android/app/build/outputs/apk/release/app-release.apk

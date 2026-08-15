@@ -1,35 +1,44 @@
-// 排行榜客户端：调用本地 Node 服务的 /api/scores
-// （由服务端持有 DATABASE_URL 并连接 Supabase PostgreSQL，前端不接触任何密钥）
+// 排行榜客户端：通过 Supabase REST API(PostgREST) 读写 scores 表
+// 密钥从环境变量读取（.env，不提交）：VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY(publishable 公钥)
+// 走公网接口，网页与安卓 App 均可直接使用（不依赖本地服务）
+
+const SUPABASE_URL = (import.meta.env.VITE_SUPABASE_URL || '').replace(/\/$/, '');
+const SUPABASE_ANON = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
 export function isLeaderboardReady() {
-  return true; // 始终尝试，连接失败时给出明确提示
-}
-
-async function api(method, body) {
-  try {
-    const res = await fetch('/api/scores', {
-      method,
-      headers: body ? { 'Content-Type': 'application/json' } : {},
-      body: body ? JSON.stringify(body) : undefined
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      return { error: err.error || ('HTTP ' + res.status) };
-    }
-    return await res.json();
-  } catch (e) {
-    return { error: '无法连接本地服务（请确认已启动 node server.js）' };
-  }
+  return !!(SUPABASE_URL && SUPABASE_ANON);
 }
 
 export async function submitScore(name, score) {
-  const r = await api('POST', { name: String(name).slice(0, 20), score: Number(score) || 0 });
-  if (r && r.error) return { ok: false, error: r.error };
-  return { ok: true };
+  if (!isLeaderboardReady()) return { ok: false, error: '未配置 Supabase 密钥' };
+  try {
+    const res = await fetch(SUPABASE_URL + '/rest/v1/scores', {
+      method: 'POST',
+      headers: {
+        apikey: SUPABASE_ANON,
+        Authorization: 'Bearer ' + SUPABASE_ANON,
+        'Content-Type': 'application/json',
+        Prefer: 'return=minimal'
+      },
+      body: JSON.stringify({ name: String(name).slice(0, 20), score: Number(score) || 0 })
+    });
+    if (!res.ok) return { ok: false, error: 'HTTP ' + res.status };
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: '网络错误' };
+  }
 }
 
 export async function fetchScores(limit = 20) {
-  const r = await api('GET');
-  if (r && r.error) return null;   // null 表示服务不可达
-  return Array.isArray(r) ? r : [];
+  if (!isLeaderboardReady()) return null;
+  try {
+    const res = await fetch(
+      SUPABASE_URL + '/rest/v1/scores?select=name,score&order=score.desc&limit=' + limit,
+      { headers: { apikey: SUPABASE_ANON, Authorization: 'Bearer ' + SUPABASE_ANON } }
+    );
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (e) {
+    return null;
+  }
 }

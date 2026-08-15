@@ -24,6 +24,12 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
+        release {
+            storeFile file('release.keystore')
+            storePassword 'kaishui2026'
+            keyAlias 'mofaxiaojingling'
+            keyPassword 'kaishui2026'
+        }
     }
     buildTypes {
         debug {
@@ -31,6 +37,7 @@ android {
         }
         release {
             minifyEnabled false
+            signingConfig signingConfigs.release
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
