@@ -1,5 +1,5 @@
-/* 拼音小勇士 Service Worker —— 提供离线缓存（安装到主屏后可离线使用） */
-const CACHE = 'pinyin-warrior-v2';
+/* 拼音小勇士 Service Worker —— 网络优先 + 缓存回退（离线可用，且内容始终最新） */
+const CACHE = 'pinyin-warrior-v3';
 const ASSETS = [
   './',
   './index.html',
@@ -26,13 +26,13 @@ self.addEventListener('activate', (e) => {
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
   e.respondWith(
-    caches.match(e.request).then((hit) => {
-      if (hit) return hit;
-      return fetch(e.request).then((res) => {
+    fetch(e.request)
+      .then((res) => {
+        // 网络成功：更新缓存
         const copy = res.clone();
         caches.open(CACHE).then((c) => c.put(e.request, copy));
         return res;
-      }).catch(() => caches.match('./index.html'));
-    })
+      })
+      .catch(() => caches.match(e.request).then((hit) => hit || caches.match('./index.html')))
   );
 });
