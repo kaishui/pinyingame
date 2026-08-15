@@ -9,8 +9,8 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="拼音小勇士">
-<title>🧚‍♀️ 拼音小勇士</title>
+<meta name="apple-mobile-web-app-title" content="魔法小精灵">
+<title>🧚‍♀️ 魔法小精灵</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧚‍♀️</text></svg>">
 <style>
   :root {
@@ -55,6 +55,17 @@
     100% { transform: translateY(-8vh) rotate(360deg) scale(1); opacity: 0; }
   }
   .app, #toast { position: relative; z-index: 1; }
+
+  /* 右上角用户入口 */
+  .user-btn {
+    position: fixed; top: 12px; right: 12px; z-index: 100;
+    display: flex; align-items: center; gap: 6px;
+    background: rgba(255,255,255,.94); border: 2px solid #ffe0ef; border-radius: 999px;
+    padding: 7px 13px; font-weight: 800; font-size: 14px; color: var(--purple-deep);
+    box-shadow: 0 3px 10px rgba(224,68,136,.22); cursor: pointer; font-family: inherit;
+  }
+  .user-btn:hover { background: #fff0f8; }
+  .user-btn .uname { max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
   /* ---------- 品牌 ---------- */
   .brand { text-align: center; margin: 6px 0 16px; }
@@ -388,13 +399,14 @@
 </head>
 <body>
 <div class="sparkles" id="sparkles"></div>
+<button class="user-btn" id="user-btn" title="我的名字与排行榜">👤<span class="uname" id="user-btn-name">未命名</span></button>
 <div class="app">
 
   <!-- ============ 首页 ============ -->
   <section id="home-screen" class="screen active">
     <header class="brand">
       <div class="mascot">🧚‍♀️</div>
-      <h1>拼音小勇士</h1>
+      <h1>魔法小精灵</h1>
       <p>和小仙女一起，先听一听，再大声读出来！</p>
     </header>
 
@@ -409,10 +421,10 @@
         <div class="ico">🌈</div><div class="tt">音节总览表</div><div class="ds">横竖点击 · 听所有音节</div>
       </button>
       <button class="entry" id="go-words">
-        <div class="ico">🗣️</div><div class="tt">流利说·刷单词</div><div class="ds">词语 + 经典造句 · 跟读闯关</div>
+        <div class="ico">🗣️</div><div class="tt">跟读·刷单词</div><div class="ds">词语 + 经典造句 · 跟读闯关</div>
       </button>
       <button class="entry" id="go-english">
-        <div class="ico">🔤</div><div class="tt">英语·流利说</div><div class="ds">小学到高中 · 刷句子 · 分年级</div>
+        <div class="ico">🔤</div><div class="tt">英语·跟读</div><div class="ds">小学到高中 · 刷句子 · 分年级</div>
       </button>
       <button class="entry" id="go-math">
         <div class="ico">🧮</div><div class="tt">数学·选择题</div><div class="ds">小学 1-6 年级 · 选择题闯关</div>
@@ -514,13 +526,13 @@
     <div class="table-scroll" id="table-scroll"></div>
   </section>
 
-  <!-- ============ 流利说刷单词 ============ -->
+  <!-- ============ 跟读刷单词 ============ -->
   <section id="word-screen" class="screen">
     <!-- 词库选择 -->
     <div id="word-menu">
       <header class="overview-head">
         <div class="back"><button class="btn" id="word-back-btn">← 返回</button></div>
-        <div class="title"><h2>🗣️ 流利说 · 刷单词</h2><p>选一个词库，先听再读，无限闯关</p></div>
+        <div class="title"><h2>🗣️ 跟读 · 刷单词</h2><p>选一个词库，先听再读，无限闯关</p></div>
       </header>
       <div class="word-cats" id="word-cats"></div>
     </div>
@@ -539,7 +551,7 @@
       <header class="level-head">
         <div class="back"><button class="btn" id="word-play-back-btn">← 词库</button></div>
         <div class="level-title-wrap">
-          <div class="level-cat" id="word-mode-label">🗣️ 流利说</div>
+          <div class="level-cat" id="word-mode-label">🗣️ 跟读</div>
           <div class="level-title">听一听，大声读出来！</div>
         </div>
         <div class="level-score">✅ <span id="word-score">0</span></div>
@@ -564,12 +576,12 @@
     </div>
   </section>
 
-  <!-- ============ 英语流利说刷句子 ============ -->
+  <!-- ============ 英语跟读刷句子 ============ -->
   <section id="english-screen" class="screen">
     <div id="english-menu">
       <header class="overview-head">
         <div class="back"><button class="btn" id="english-back-btn">← 返回</button></div>
-        <div class="title"><h2>🔤 英语 · 流利说</h2><p>小学到高中 · 分年级刷句子 · 先听再读</p></div>
+        <div class="title"><h2>🔤 英语 · 跟读</h2><p>小学到高中 · 分年级刷句子 · 先听再读</p></div>
       </header>
       <div class="word-cats" id="english-cats"></div>
     </div>
@@ -671,7 +683,7 @@
     <div class="cert">
       <div class="cert-inner">
         <div class="hero">🏆</div>
-        <h1>拼音小勇士</h1>
+        <h1>魔法小精灵</h1>
         <div class="sub">荣 誉 证 书</div>
         <label for="name-input">✏️ 输入你的名字</label>
         <input id="name-input" type="text" maxlength="12" placeholder="你的名字">

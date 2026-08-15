@@ -431,6 +431,7 @@ function computeScope() {
  * ============================================================ */
 function renderHome() {
   switchScreen('home-screen');
+  updateUserName();
   $('total-stars').textContent = totalStars();
   $('done-count').textContent = doneCount();
   $('total-count').textContent = LEVELS.length;
@@ -689,7 +690,7 @@ function renderTable() {
 }
 
 /* ============================================================
- * 十二点五、流利说 · 刷单词模式
+ * 十二点五、跟读 · 刷单词模式
  * ============================================================ */
 function shuffle(arr) {
   const a = arr.slice();
@@ -910,11 +911,11 @@ function showCert() {
 function updateCertText() {
   const name = state.name ? state.name : '小勇士';
   $('cert-text').textContent = '恭喜「' + name + '」完成全部 ' + LEVELS.length +
-    ' 关拼音闯关，成为真正的拼音小勇士！';
+    ' 关拼音闯关，成为真正的魔法小精灵！';
 }
 
 /* ============================================================
- * 十三点五、英语流利说 · 刷句子
+ * 十三点五、英语跟读 · 刷句子
  * ============================================================ */
 function judgeEnglish(target, recognized) {
   const norm = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9'\s]/g, ' ').replace(/\s+/g, ' ').trim();
@@ -1368,6 +1369,10 @@ function startTextbookUnit(gradeId, unitIdx) {
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
+function updateUserName() {
+  const el = $('user-btn-name');
+  if (el) el.textContent = state.name || '未命名';
+}
 async function showRank() {
   switchScreen('rank-screen');
   $('rank-name').value = state.name || '';
@@ -1431,7 +1436,8 @@ function bindEvents() {
   $('rank-back-btn').addEventListener('click', () => { stopSpeak(); renderHome(); });
   $('rank-submit-btn').addEventListener('click', submitRank);
   $('rank-refresh-btn').addEventListener('click', refreshRank);
-  $('rank-name').addEventListener('input', (e) => { state.name = e.target.value.trim(); saveState(); });
+  $('rank-name').addEventListener('input', (e) => { state.name = e.target.value.trim(); saveState(); updateUserName(); });
+  $('user-btn').addEventListener('click', showRank);
   $('textbook-back-btn').addEventListener('click', showWordMenu);
   $('math-back-btn').addEventListener('click', () => { stopSpeak(); renderHome(); });
   $('math-unit-back-btn').addEventListener('click', showMathMenu);
