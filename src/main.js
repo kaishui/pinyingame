@@ -1,7 +1,7 @@
 import { LEVELS, GRADES, TYPES, DIFFS, COLS, ROWS, GROUP_CLASS, GROUP_COLOR, INITIAL_READS, FINAL_READS, Y_SPELL, W_SPELL, SYL_CHAR, TONE_CHAR, WORD_DECK, TEXTBOOK_DECK, HOMO, LATIN, spellSyllable, markTone, toneCharOf } from './data-pinyin.js';
 import './speech-shim.js';
 import { ENGLISH_GRADES, ENGLISH_DECK } from './data-english.js';
-import { MATH_GRADES, MATH_DECK } from './data-math.js';
+import { MATH_GRADES, MATH_UNITS } from './data-math.js';
 
 'use strict';
 
@@ -37,6 +37,8 @@ let englishInfinite = false;
 let currentEnglish = null;
 // 数学选择题
 let mathGrade = 'random';
+let mathGradeId = 'random';
+let mathUnitIdx = -1;
 let mathDeck = [];
 let mathIndex = 0;
 let mathScore = 0;
@@ -1108,10 +1110,14 @@ function showEnglishFeedback(kind, text) {
 /* ============================================================
  * 十三点六、数学选择题
  * ============================================================ */
+function allMathItems() {
+  return Object.keys(MATH_UNITS).reduce((a, g) => a.concat(MATH_UNITS[g].reduce((b, u) => b.concat(u.items), [])), []);
+}
 function showMathMenu() {
   stopSpeak();
   switchScreen('math-screen');
   $('math-menu').hidden = false;
+  $('math-units').hidden = true;
   $('math-play').hidden = true;
   const cats = $('math-cats');
   cats.innerHTML = '';
@@ -1119,20 +1125,53 @@ function showMathMenu() {
     const b = document.createElement('button');
     b.className = 'word-cat';
     b.innerHTML = '<div class="ico">' + g.ico + '</div><div class="tt">' + g.name + '</div>';
-    b.onclick = () => startMathMode(g.id);
+    b.onclick = () => { if (g.id === 'random') startMathUnit('random', -1); else showMathUnits(g.id); };
     cats.appendChild(b);
   });
 }
-function startMathMode(gradeId) {
-  mathGrade = gradeId;
-  mathInfinite = (gradeId === 'random');
-  mathScore = 0; mathStreak = 0; mathIndex = 0;
-  mathDeck = mathInfinite
-    ? Object.keys(MATH_DECK).reduce((a, k) => a.concat(MATH_DECK[k]), [])
-    : shuffle(MATH_DECK[gradeId].slice());
+function showMathUnits(gradeId) {
+  mathGradeId = gradeId;
+  stopSpeak();
   $('math-menu').hidden = true;
+  $('math-units').hidden = false;
+  $('math-play').hidden = true;
+  $('math-unit-title').textContent = MATH_GRADES.find(g => g.id === gradeId).name + ' · 选择单元';
+  const cats = $('math-unit-cats');
+  cats.innerHTML = '';
+  const rb = document.createElement('button');
+  rb.className = 'word-cat random';
+  rb.innerHTML = '<div class="ico">🎲</div><div class="tt">本年级随机</div>';
+  rb.onclick = () => startMathUnit(gradeId, -1);
+  cats.appendChild(rb);
+  MATH_UNITS[gradeId].forEach((u, i) => {
+    const b = document.createElement('button');
+    b.className = 'word-cat';
+    b.innerHTML = '<div class="ico">📘</div><div class="tt">' + u.name + '</div><div class="ds">' + u.items.length + ' 题</div>';
+    b.onclick = () => startMathUnit(gradeId, i);
+    cats.appendChild(b);
+  });
+}
+function startMathUnit(gradeId, unitIdx) {
+  mathGradeId = gradeId;
+  mathUnitIdx = unitIdx;
+  mathInfinite = (unitIdx === -1);
+  mathScore = 0; mathStreak = 0; mathIndex = 0;
+  if (gradeId === 'random') {
+    mathDeck = allMathItems();
+  } else if (unitIdx === -1) {
+    mathDeck = MATH_UNITS[gradeId].reduce((a, u) => a.concat(u.items), []);
+  } else {
+    mathDeck = shuffle(MATH_UNITS[gradeId][unitIdx].items.slice());
+  }
+  const label = gradeId === 'random'
+    ? '全部随机'
+    : (unitIdx === -1
+      ? MATH_GRADES.find(g => g.id === gradeId).name + ' · 随机'
+      : MATH_GRADES.find(g => g.id === gradeId).name + ' · ' + MATH_UNITS[gradeId][unitIdx].name);
+  $('math-menu').hidden = true;
+  $('math-units').hidden = true;
   $('math-play').hidden = false;
-  $('math-mode-label').textContent = '🧮 ' + (MATH_GRADES.find(g => g.id === gradeId) || { name: '' }).name;
+  $('math-mode-label').textContent = '🧮 ' + label;
   renderMath();
   switchScreen('math-screen');
 }
@@ -1233,7 +1272,8 @@ function bindEvents() {
   $('english-mic-btn').addEventListener('click', onEnglishMicClick);
   $('go-math').addEventListener('click', showMathMenu);
   $('math-back-btn').addEventListener('click', () => { stopSpeak(); renderHome(); });
-  $('math-play-back-btn').addEventListener('click', showMathMenu);
+  $('math-unit-back-btn').addEventListener('click', showMathMenu);
+  $('math-play-back-btn').addEventListener('click', () => { if (mathGradeId === 'random') showMathMenu(); else showMathUnits(mathGradeId); });
   $('back-btn').addEventListener('click', () => { stopSpeak(); renderMap(); });
   $('map-home-btn').addEventListener('click', () => { stopSpeak(); renderHome(); });
   $('map-start-btn').addEventListener('click', () => { computeScope(); if (!scope.empty) enterLevel(scope.start); });

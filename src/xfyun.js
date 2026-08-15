@@ -52,16 +52,32 @@ function resampleTo16k(input, inputRate) {
   return out;
 }
 
-// 讯飞 IAT 二进制帧：首字节 status（0=首帧 1=中间帧 2=末帧）+ 小端 Int16 PCM
-function buildFrame(status, int16) {
-  const bytes = new Uint8Array(1 + int16.length * 2);
-  bytes[0] = status;
+// Int16 PCM（小端）→ base64
+function int16ToBase64(int16) {
+  const bytes = new Uint8Array(int16.length * 2);
   for (let i = 0; i < int16.length; i++) {
     const v = int16[i];
-    bytes[1 + i * 2] = v & 0xff;
-    bytes[2 + i * 2] = (v >> 8) & 0xff;
+    bytes[i * 2] = v & 0xff;
+    bytes[i * 2 + 1] = (v >> 8) & 0xff;
   }
-  return bytes.buffer;
+  let bin = '';
+  const CH = 0x8000;
+  for (let i = 0; i < bytes.length; i += CH) {
+    bin += String.fromCharCode.apply(null, bytes.subarray(i, i + CH));
+  }
+  return btoa(bin);
+}
+
+// 讯飞 IAT 音频帧（JSON 文本）：data.status / format / encoding / audio(base64)
+function buildAudioFrame(status, int16) {
+  return JSON.stringify({
+    data: {
+      status: status,
+      format: 'audio/L16;rate=16000',
+      encoding: 'raw',
+      audio: int16ToBase64(int16)
+    }
+  });
 }
 
 export class XunfeiSpeechRecognition {
@@ -105,13 +121,9 @@ export class XunfeiSpeechRecognition {
       const url = await xfAuthUrl();
       const ws = new WebSocket(url);
       this._ws = ws;
-      ws.binaryType = 'arraybuffer';
-      ws.onopen = () => {
-        const lang = (window.__SPEECH_LANG__ === 'en-US' || this.lang === 'en-US') ? 'en_us' : 'zh_cn';
-        const business = { language: lang, domain: 'iat' };
-        if (lang === 'zh_cn') business.accent = 'mandarin';
-        ws.send(JSON.stringify({ common: { app_id: APP_ID }, business }));
-      };
+      const lang = (window.__SPEECH_LANG__ === 'en-US' || this.lang === 'en-US') ? 'en_us' : 'zh_cn';
+      const business = { language: lang, domain: 'iat' };
+      if (lang === 'zh_cn') business.accent = 'mandarin';
       ws.onmessage = (e) => this._onMessage(e.data);
       ws.onerror = () => this._fail('network');
       ws.onclose = () => this._onClose();
@@ -135,16 +147,26 @@ export class XunfeiSpeechRecognition {
 
         const CHUNK = 640; // 40ms
         for (let i = 0; i < int16.length; i += CHUNK) {
+          if (ended) break;
+          if (ws.readyState !== 1) continue; // 等连接建立
           const slice = int16.subarray(i, Math.min(i + CHUNK, int16.length));
-          const status = firstSent ? 1 : 0;
-          firstSent = true;
-          if (ws.readyState === 1) ws.send(buildFrame(status, slice));
+          if (!firstSent) {
+            // 第一帧：common + business + data(status=0)
+            ws.send(JSON.stringify({
+              common: { app_id: APP_ID },
+              business,
+              data: { status: 0, format: 'audio/L16;rate=16000', encoding: 'raw', audio: int16ToBase64(slice) }
+            }));
+            firstSent = true;
+          } else {
+            ws.send(buildAudioFrame(1, slice));
+          }
         }
         buffers++;
         // 静音约 1.8 秒或最长约 12 秒后结束
         if ((hasSpeech && silent >= 7) || buffers >= 50) {
           ended = true;
-          if (ws.readyState === 1) ws.send(buildFrame(2, new Int16Array(0)));
+          if (ws.readyState === 1) ws.send(buildAudioFrame(2, new Int16Array(0)));
         }
       };
       source.connect(processor);
@@ -155,7 +177,7 @@ export class XunfeiSpeechRecognition {
       setTimeout(() => {
         if (!ended && !this._finished && ws.readyState === 1) {
           ended = true;
-          ws.send(buildFrame(2, new Int16Array(0)));
+          ws.send(buildAudioFrame(2, new Int16Array(0)));
         }
       }, 15000);
     } catch (e) {
