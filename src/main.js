@@ -45,6 +45,8 @@ let mathScore = 0;
 let mathStreak = 0;
 let mathInfinite = false;
 let currentMath = null;
+let currentMathOpts = [];
+let currentMathAns = 0;
 
 function defaultState() {
   return {
@@ -1194,7 +1196,11 @@ function renderMath() {
   }
   const opts = $('math-options');
   opts.innerHTML = '';
-  q.opts.forEach((o, i) => {
+  // 打乱选项顺序，避免正确答案总在固定位置（如总在 B）
+  const idx = shuffle([0, 1, 2, 3]);
+  currentMathOpts = idx.map(i => q.opts[i]);
+  currentMathAns = idx.indexOf(q.ans);
+  currentMathOpts.forEach((o, i) => {
     const b = document.createElement('button');
     b.className = 'math-option';
     b.textContent = o;
@@ -1206,15 +1212,14 @@ function renderMath() {
   updateMathStreak();
 }
 function answerMath(i) {
-  const q = currentMath;
   const buttons = $('math-options').querySelectorAll('button');
   buttons.forEach(b => b.disabled = true);
-  if (i === q.ans) {
+  if (i === currentMathAns) {
     buttons[i].classList.add('right');
     mathScore++; mathStreak++;
     updateMathStreak();
     playSuccessSound();
-    showMathFeedback('success', '✅ 答对了！' + q.opts[q.ans]);
+    showMathFeedback('success', '✅ 答对了！' + currentMathOpts[currentMathAns]);
     burstConfetti();
     setTimeout(() => {
       if (!mathInfinite && mathIndex + 1 >= mathDeck.length) mathRoundComplete();
@@ -1222,11 +1227,11 @@ function answerMath(i) {
     }, 1200);
   } else {
     buttons[i].classList.add('wrong');
-    buttons[q.ans].classList.add('right');
+    buttons[currentMathAns].classList.add('right');
     mathStreak = 0;
     updateMathStreak();
     playFailSound();
-    showMathFeedback('fail', '❌ 正确答案是 ' + q.opts[q.ans]);
+    showMathFeedback('fail', '❌ 正确答案是 ' + currentMathOpts[currentMathAns]);
     setTimeout(() => {
       if (!mathInfinite && mathIndex + 1 >= mathDeck.length) mathRoundComplete();
       else { mathIndex++; renderMath(); }
