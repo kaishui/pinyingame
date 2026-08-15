@@ -7,6 +7,7 @@
 import { Capacitor } from '@capacitor/core';
 import { SpeechRecognition } from '@capacitor-community/speech-recognition';
 import { TextToSpeech } from '@capacitor-community/text-to-speech';
+import { XunfeiSpeechRecognition } from './xfyun.js';
 
 if (Capacitor.isNativePlatform && Capacitor.isNativePlatform()) {
   window.__SPEECH_NATIVE__ = true;
@@ -108,4 +109,7 @@ if (Capacitor.isNativePlatform && Capacitor.isNativePlatform()) {
   }
 
   window.SpeechRecognition = NativeSpeechRecognition;
+} else {
+  // 网页版：用讯飞语音听写（国内可用），替代连不上 Google 的 webkitSpeechRecognition
+  window.SpeechRecognition = XunfeiSpeechRecognition;
 }
