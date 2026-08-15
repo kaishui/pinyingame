@@ -1,4 +1,4 @@
-/* 拼音小勇士 Service Worker —— 网络优先 + 缓存回退（离线可用，且内容始终最新） */
+/* 魔法小精灵 Service Worker —— 网络优先 + 缓存回退（离线可用，且内容始终最新） */
 const CACHE = 'pinyin-warrior-v3';
 const ASSETS = [
   './',

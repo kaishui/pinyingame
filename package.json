@@ -1,7 +1,7 @@
 {
   "name": "pinyin-warrior",
   "version": "1.0.0",
-  "description": "拼音小勇士 —— 面向小学生的拼音学习闯关游戏（Capacitor 安卓/iOS 封装 + 语音识别插件）",
+  "description": "魔法小精灵 —— 面向小学生的拼音学习闯关游戏（Capacitor 安卓/iOS 封装 + 语音识别插件）",
   "main": "server.js",
   "scripts": {
     "dev": "vite",

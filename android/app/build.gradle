@@ -7,8 +7,8 @@ android {
         applicationId "com.kaishui.pinyingame"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 2
-        versionName "1.2.1"
+        versionCode 3
+        versionName "1.4.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -18,11 +18,11 @@ android {
     }
     signingConfigs {
         debug {
-            // 固定签名密钥：确保每次 CI 构建的 APK 签名一致，可覆盖安装
-            storeFile file('debug.keystore')
-            storePassword 'android'
-            keyAlias 'androiddebugkey'
-            keyPassword 'android'
+            // 与 release 使用同一把密钥：debug/release 包可互相覆盖安装
+            storeFile file('release.keystore')
+            storePassword 'kaishui2026'
+            keyAlias 'mofaxiaojingling'
+            keyPassword 'kaishui2026'
         }
         release {
             storeFile file('release.keystore')

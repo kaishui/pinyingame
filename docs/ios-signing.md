@@ -1,6 +1,6 @@
 # iOS / iPad / iPhone 打包与签名指南
 
-「拼音小勇士」的 iOS 构建已经全自动跑通（GitHub Actions 的 macOS runner + Xcode + CocoaPods），
+「魔法小精灵」的 iOS 构建已经全自动跑通（GitHub Actions 的 macOS runner + Xcode + CocoaPods），
 但产出**可安装到真机的包**需要 Apple 签名。本文件说明两条路：免费 Apple ID 侧载、付费开发者签名。
 
 ## 现状
