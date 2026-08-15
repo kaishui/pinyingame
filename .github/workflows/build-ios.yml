@@ -26,6 +26,10 @@ jobs:
         run: npm ci
 
       - name: Build web assets
+        env:
+          VITE_XF_APPID: ${{ secrets.VITE_XF_APPID }}
+          VITE_XF_APIKEY: ${{ secrets.VITE_XF_APIKEY }}
+          VITE_XF_APISECRET: ${{ secrets.VITE_XF_APISECRET }}
         run: npm run build
 
       - name: Sync Capacitor (CocoaPods)
