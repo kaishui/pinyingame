@@ -1,6 +1,6 @@
 {
   "name": "pinyin-warrior",
-  "version": "1.0.0",
+  "version": "1.5.0",
   "description": "魔法小精灵 —— 面向小学生的拼音学习闯关游戏（Capacitor 安卓/iOS 封装 + 语音识别插件）",
   "main": "server.js",
   "scripts": {

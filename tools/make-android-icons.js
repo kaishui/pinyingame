@@ -1,8 +1,9 @@
-// 生成安卓 launcher 图标（魔法小精灵：粉紫渐变 + 白色星光）
+// 生成安卓 launcher 图标（魔法小精灵：粉紫渐变 + 魔法星光）
 // 用法：node tools/make-android-icons.js
 const zlib = require('zlib');
 const fs = require('fs');
 const path = require('path');
+const { iconColor, foregroundColor } = require('./logo-art.js');
 
 function crc32(buf) {
   let t = crc32.t;
@@ -44,33 +45,28 @@ function makePng(size, draw) {
     chunk('IEND', Buffer.alloc(0))
   ]);
 }
-const lerp = (a, b, t) => a + (b - a) * t;
-function sparkle(nx, ny) {
-  const ax = 0.24, bx = 0.62;
-  return (Math.abs(nx) / ax + Math.abs(ny) / bx <= 1) || (Math.abs(nx) / bx + Math.abs(ny) / ax <= 1);
-}
-function grad(t) { return [Math.round(lerp(255, 167, t)), Math.round(lerp(158, 139, t)), Math.round(lerp(203, 250, t))]; }
+
 function roundedRect(nx, ny, hw, hh, r) {
   const dx = Math.max(Math.abs(nx) - (hw - r), 0), dy = Math.max(Math.abs(ny) - (hh - r), 0);
   return dx * dx + dy * dy <= r * r;
 }
-const legacy = (nx, ny) => {
+
+const N = (fx, fy) => [fx * 2 - 1, 1 - fy * 2];
+
+// 传统方形图标（圆角矩形 + 完整渐变图）
+const legacy = (fx, fy) => {
+  const [nx, ny] = N(fx, fy);
   if (!roundedRect(nx, ny, 1, 1, 0.22)) return [0, 0, 0, 0];
-  if (sparkle(nx, ny)) return [255, 255, 255, 255];
-  const [r, g, b] = grad((1 - ny) / 2);
-  return [r, g, b, 255];
+  return [...iconColor(nx, ny), 255];
 };
-const round = (nx, ny) => {
+// 圆形图标
+const round = (fx, fy) => {
+  const [nx, ny] = N(fx, fy);
   if (nx * nx + ny * ny > 1) return [0, 0, 0, 0];
-  if (sparkle(nx, ny)) return [255, 255, 255, 255];
-  const [r, g, b] = grad((1 - ny) / 2);
-  return [r, g, b, 255];
+  return [...iconColor(nx, ny), 255];
 };
-const foreground = (nx, ny) => {
-  const s = 0.5;
-  if (sparkle(nx / s, ny / s)) return [255, 255, 255, 255];
-  return [0, 0, 0, 0];
-};
+// 自适应图标前景（透明背景，主体缩放到安全区）
+const foreground = (fx, fy) => foregroundColor(fx * 2 - 1, 1 - fy * 2);
 
 const root = path.join(__dirname, '..', 'android', 'app', 'src', 'main', 'res');
 const dens = [['mipmap-mdpi', 48, 108], ['mipmap-hdpi', 72, 162], ['mipmap-xhdpi', 96, 216], ['mipmap-xxhdpi', 144, 324], ['mipmap-xxxhdpi', 192, 432]];

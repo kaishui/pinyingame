@@ -181,7 +181,9 @@ export class XunfeiSpeechRecognition {
         }
       }, 15000);
     } catch (e) {
-      this._fail('audio-capture');
+      const name = String((e && e.name) || '');
+      // 用户拒绝麦克风 / 权限未授予 / 设备不支持
+      this._fail(/NotAllowed|Permission|Security/i.test(name) ? 'not-allowed' : 'audio-capture');
     }
   }
 

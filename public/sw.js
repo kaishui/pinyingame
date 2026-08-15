@@ -1,5 +1,5 @@
 /* 魔法小精灵 Service Worker —— 网络优先 + 缓存回退（离线可用，且内容始终最新） */
-const CACHE = 'pinyin-warrior-v3';
+const CACHE = 'pinyin-warrior-v4';
 const ASSETS = [
   './',
   './index.html',

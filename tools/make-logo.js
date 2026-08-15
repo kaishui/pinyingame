@@ -3,6 +3,7 @@
 const zlib = require('zlib');
 const fs = require('fs');
 const path = require('path');
+const { iconColor, splashColor } = require('./logo-art.js');
 
 function crc32(buf) {
   let table = crc32.table;
@@ -45,30 +46,9 @@ function makePng(size, draw) {
   ]);
 }
 
-function lerp(a, b, t) { return a + (b - a) * t; }
-
-// 图标绘制：粉紫渐变 + 白色四角星光（魔法小精灵）
-function iconPixel(fx, fy) {
-  const nx = fx * 2 - 1;            // -1..1
-  const ny = 1 - fy * 2;            // 上正下负
-  const t = (1 - ny) / 2;           // 0=顶部 1=底部
-  let r = lerp(255, 167, t), g = lerp(158, 139, t), b = lerp(203, 250, t);
-
-  const ax = 0.24, bx = 0.62;       // 星光窄/长半径
-  const inStar = (Math.abs(nx) / ax + Math.abs(ny) / bx <= 1) ||
-                 (Math.abs(nx) / bx + Math.abs(ny) / ax <= 1);
-  const d = Math.sqrt(nx * nx + ny * ny);
-  const inGlow = d < 0.52;
-
-  if (inStar) { r = 255; g = 255; b = 255; }
-  else if (inGlow) { const k = 0.22 * (1 - d / 0.52); r = lerp(r, 255, k); g = lerp(g, 255, k); b = lerp(b, 255, k); }
-  return [Math.round(r), Math.round(g), Math.round(b)];
-}
-// 启动图：纯渐变
-function splashPixel(fx, fy) {
-  const t = fy;
-  return [Math.round(lerp(255, 167, t)), Math.round(lerp(158, 139, t)), Math.round(lerp(203, 250, t))];
-}
+// 注意：fx,fy ∈ [0,1]，fy 向下；转为 nx,ny ∈ [-1,1]，ny 向上
+const iconPixel = (fx, fy) => iconColor(fx * 2 - 1, 1 - fy * 2);
+const splashPixel = (fx, fy) => splashColor(fx * 2 - 1, 1 - fy * 2);
 
 const outDir = path.join(__dirname, '..', 'assets');
 fs.mkdirSync(outDir, { recursive: true });
