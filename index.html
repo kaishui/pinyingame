@@ -305,6 +305,26 @@
   .mul-cell:hover { background: #ffe0ef; transform: scale(1.06); }
   .mul-cell.head { background: #f7e3f0; color: var(--pink-deep); cursor: default; font-size: 16px; }
 
+  /* 排行榜 */
+  .rank-label { display: block; font-weight: 800; color: var(--ink-soft); font-size: 14px; margin-bottom: 8px; }
+  .rank-input-row { display: flex; gap: 10px; margin-bottom: 10px; }
+  .rank-input-row input {
+    flex: 1 1 auto; min-width: 0; border: 3px solid #ffe0ef; border-radius: 999px;
+    padding: 12px 16px; font-size: 18px; font-weight: 800; outline: none; text-align: center;
+  }
+  .rank-input-row input:focus { border-color: var(--pink); box-shadow: 0 0 0 4px rgba(255,95,162,.15); }
+  .rank-input-row .btn { font-size: 15px; padding: 12px 18px; flex: 0 0 auto; }
+  .rank-my { font-size: 14px; font-weight: 800; color: var(--pink-deep); margin-bottom: 8px; min-height: 18px; }
+  .rank-list { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .rank-row {
+    display: flex; align-items: center; gap: 10px; background: #fdf3f9; border-radius: 14px;
+    padding: 10px 14px; font-weight: 800;
+  }
+  .rank-row .rank-no { flex: 0 0 40px; text-align: center; font-size: 18px; }
+  .rank-row .rank-name { flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rank-row .rank-score { flex: 0 0 auto; color: #b07900; }
+  .rank-empty { text-align: center; color: var(--ink-soft); font-weight: 700; padding: 20px 10px; }
+
   .table-scroll {
     background: rgba(255,255,255,.85); border-radius: 22px; overflow: auto; max-height: 66vh;
     box-shadow: 0 8px 20px rgba(139,110,240,.14); position: relative;
@@ -399,6 +419,9 @@
       </button>
       <button class="entry" id="go-mul">
         <div class="ico">🔢</div><div class="tt">乘法口诀</div><div class="ds">九九乘法表 · 点击听口诀</div>
+      </button>
+      <button class="entry" id="go-rank">
+        <div class="ico">🏆</div><div class="tt">排行榜</div><div class="ds">全网排名 · 输入名字上榜</div>
       </button>
       <button class="entry" id="go-cert">
         <div class="ico">🏆</div><div class="tt">荣誉证书</div><div class="ds">全部通关后领取</div>
@@ -622,6 +645,24 @@
     </header>
     <div class="table-scroll" style="max-height:none;">
       <div class="mul-grid" id="mul-grid"></div>
+    </div>
+  </section>
+
+  <!-- ============ 排行榜 ============ -->
+  <section id="rank-screen" class="screen">
+    <header class="overview-head">
+      <div class="back"><button class="btn" id="rank-back-btn">← 返回</button></div>
+      <div class="title"><h2>🏆 排行榜</h2><p>全网小勇士排名</p></div>
+    </header>
+    <div class="learn-card" style="text-align:left;">
+      <label class="rank-label">✏️ 我的名字（随便输一个）</label>
+      <div class="rank-input-row">
+        <input id="rank-name" type="text" maxlength="12" placeholder="输入你的名字">
+        <button class="btn" id="rank-submit-btn">上传我的分数</button>
+      </div>
+      <div class="rank-my" id="rank-my"></div>
+      <button class="btn ghost" id="rank-refresh-btn" style="margin-top:10px;">🔄 刷新排名</button>
+      <div class="rank-list" id="rank-list"></div>
     </div>
   </section>
 

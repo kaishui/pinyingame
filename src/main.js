@@ -3,6 +3,7 @@ import { TEXTBOOK_DECK, CHINESE_GRADES, CHINESE_UNITS } from './data-chinese.js'
 import './speech-shim.js';
 import { ENGLISH_GRADES, ENGLISH_DECK } from './data-english.js';
 import { MATH_GRADES, MATH_UNITS } from './data-math.js';
+import { submitScore, fetchScores, isLeaderboardReady } from './leaderboard.js';
 
 'use strict';
 
@@ -386,6 +387,8 @@ function levelComplete() {
   speak('太棒了，过关啦！你得到了一张贴纸！');
   showFeedback('success', '🎉 过关啦！得 ' + LEVELS[currentLevel].items.length + ' 颗星 + 贴纸一张！');
   burstConfetti();
+  // 若已设置用户名且排行榜可用，自动上传分数
+  if (state.name && isLeaderboardReady()) { submitScore(state.name, totalStars()).catch(() => {}); }
   setTimeout(() => { renderHome(); renderMap(); }, 2200);
 }
 function enterLevel(i) {
@@ -1360,6 +1363,51 @@ function startTextbookUnit(gradeId, unitIdx) {
 }
 
 /* ============================================================
+ * 十三点九、排行榜
+ * ============================================================ */
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+async function showRank() {
+  switchScreen('rank-screen');
+  $('rank-name').value = state.name || '';
+  await refreshRank();
+}
+async function refreshRank() {
+  const list = $('rank-list');
+  list.innerHTML = '';
+  if (!isLeaderboardReady()) {
+    list.innerHTML = '<div class="rank-empty">⚠️ 尚未配置 Supabase anon 密钥（见 .env 的 VITE_SUPABASE_ANON_KEY）</div>';
+    $('rank-my').textContent = '';
+    return;
+  }
+  $('rank-my').textContent = '加载中…';
+  const scores = await fetchScores(20);
+  $('rank-my').textContent = '';
+  if (!scores.length) {
+    list.innerHTML = '<div class="rank-empty">还没有成绩，快来上传你的分数吧！</div>';
+    return;
+  }
+  scores.forEach((s, i) => {
+    const row = document.createElement('div');
+    row.className = 'rank-row';
+    const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1);
+    row.innerHTML = '<span class="rank-no">' + medal + '</span><span class="rank-name">' + escapeHtml(s.name) + '</span><span class="rank-score">⭐ ' + escapeHtml(String(s.score)) + '</span>';
+    list.appendChild(row);
+  });
+}
+async function submitRank() {
+  const name = $('rank-name').value.trim();
+  if (!name) { toast('✏️ 先输入一个名字吧'); return; }
+  state.name = name;
+  saveState();
+  const score = totalStars();
+  const r = await submitScore(name, score);
+  if (r.ok) { toast('✅ 已上传！当前 ⭐ ' + score); await refreshRank(); }
+  else { toast('❌ 上传失败：' + (r.error || '未知错误')); }
+}
+
+/* ============================================================
  * 十四、事件绑定与初始化
  * ============================================================ */
 function bindEvents() {
@@ -1379,6 +1427,11 @@ function bindEvents() {
   $('go-math').addEventListener('click', showMathMenu);
   $('go-mul').addEventListener('click', showMulTable);
   $('mul-back-btn').addEventListener('click', () => { stopSpeak(); renderHome(); });
+  $('go-rank').addEventListener('click', showRank);
+  $('rank-back-btn').addEventListener('click', () => { stopSpeak(); renderHome(); });
+  $('rank-submit-btn').addEventListener('click', submitRank);
+  $('rank-refresh-btn').addEventListener('click', refreshRank);
+  $('rank-name').addEventListener('input', (e) => { state.name = e.target.value.trim(); saveState(); });
   $('textbook-back-btn').addEventListener('click', showWordMenu);
   $('math-back-btn').addEventListener('click', () => { stopSpeak(); renderHome(); });
   $('math-unit-back-btn').addEventListener('click', showMathMenu);
