@@ -159,7 +159,7 @@ body{font-family:'PingFang SC','Microsoft YaHei','Helvetica Neue',Arial,sans-ser
   // 文字元素定义
   const FIELDS = [
     { key:'cls', label:'班级', def:'一1班', fs:20 },
-    { key:'name', label:'姓名', def:'张三', fs:46 },
+    { key:'name', label:'姓名', def:'张三丰', fs:46 },
     { key:'slogan', label:'标语', def:'文明礼仪', fs:18 },
     { key:'org', label:'学校', def:'广州市番禺区市桥富都小学', fs:13 },
   ];
@@ -263,13 +263,15 @@ body{font-family:'PingFang SC','Microsoft YaHei','Helvetica Neue',Arial,sans-ser
       const el = document.createElement('div');
       el.className = 'text-el';
       el.dataset.key = f.key;
+      el.dataset.fs = f.fs;
       el.contentEditable = 'true';
       el.textContent = f.def;
       el.style.fontSize = f.fs + 'px';
       applyTransform(el, f.key, counter);
-      el.addEventListener('input', () => updateVisible(el));
+      el.addEventListener('input', () => { updateVisible(el); fitText(el, card); });
       el.addEventListener('pointerdown', (e) => startDrag(e, f.key, card, counter));
       card.appendChild(el);
+      fitText(el, card);
     });
     paper.appendChild(card);
     stage.appendChild(paper);
@@ -282,6 +284,16 @@ body{font-family:'PingFang SC','Microsoft YaHei','Helvetica Neue',Arial,sans-ser
   }
   function updateVisible(el){
     el.style.display = el.textContent.replace(/\s/g,'') === '' ? 'none' : '';
+  }
+  // 多字自动缩小字号，保证不换行且不超出卡片宽度
+  function fitText(el, card){
+    const base = Number(el.dataset.fs) || 20;
+    el.style.fontSize = base + 'px';
+    const cardW = card.offsetWidth;
+    const elW = el.offsetWidth;
+    if (cardW > 10 && elW > cardW * 0.92) {
+      el.style.fontSize = Math.max(8, Math.floor(base * cardW * 0.92 / elW)) + 'px';
+    }
   }
 
   function startDrag(e, key, card, counter){
@@ -315,7 +327,7 @@ body{font-family:'PingFang SC','Microsoft YaHei','Helvetica Neue',Arial,sans-ser
     elements = { cls:{x:50,y:30}, name:{x:50,y:46}, slogan:{x:50,y:74}, org:{x:50,y:90} };
     $('customColor').value = '#1B2E91';
     renderClassColors(); renderSizes(); renderCard();
-    setElText('cls','一1班'); setElText('name','张三'); setElText('slogan','文明礼仪'); setElText('org','广州市番禺区市桥富都小学');
+    setElText('cls','一1班'); setElText('name','张三丰'); setElText('slogan','文明礼仪'); setElText('org','广州市番禺区市桥富都小学');
     // 重置旋转按钮高亮
     document.querySelectorAll('#rotateRow .opt-btn').forEach(x=>x.classList.toggle('active', x.dataset.val==='0'));
   }
@@ -362,7 +374,7 @@ body{font-family:'PingFang SC','Microsoft YaHei','Helvetica Neue',Arial,sans-ser
   function init(){
     $('fontColor').disabled = true;
     renderClassColors(); renderSizes(); renderLayouts(); renderCard();
-    setElText('cls','一1班'); setElText('name','张三'); setElText('slogan','文明礼仪'); setElText('org','广州市番禺区市桥富都小学');
+    setElText('cls','一1班'); setElText('name','张三丰'); setElText('slogan','文明礼仪'); setElText('org','广州市番禺区市桥富都小学');
   }
   init();
   window.__cardGen = { resetAll, exportPNG };
