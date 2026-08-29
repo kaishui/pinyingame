@@ -211,7 +211,7 @@ body{font-family:'PingFang SC','Microsoft YaHei','Helvetica Neue',Arial,sans-ser
           <div class="input-row"><label>班级</label><input type="text" id="inputClass" value="一1班" /></div>
           <div class="input-row"><label>姓名</label><input type="text" id="inputName" value="张三" /></div>
           <div class="input-row"><label>标语</label><input type="text" id="inputSlogan" value="文明礼仪" /></div>
-          <div class="input-row"><label>学校</label><input type="text" id="inputOrg" value="广州市番禺区富都小学" /></div>
+          <div class="input-row"><label>学校</label><input type="text" id="inputOrg" value="广州市番禺区市桥富都小学" /></div>
         </div>
       </div>
 
@@ -243,7 +243,7 @@ body{font-family:'PingFang SC','Microsoft YaHei','Helvetica Neue',Arial,sans-ser
             </div>
             <div class="card-bottom">
               <div class="card-slogan" id="previewSlogan">文明礼仪</div>
-              <div class="card-org" id="previewOrg">广州市番禺区富都小学</div>
+              <div class="card-org" id="previewOrg">广州市番禺区市桥富都小学</div>
             </div>
           </div>
         </div>
@@ -349,7 +349,7 @@ body{font-family:'PingFang SC','Microsoft YaHei','Helvetica Neue',Arial,sans-ser
       d.textContent = c.label;
       d.onclick = () => {
         currentColor = c.bg;
-        if (mode === 'single') { $('inputClass').value = c.label; $('autoFontColor').checked = false; $('fontColor').value = c.text; $('fontColor').disabled = true; }
+        if (mode === 'single') { $('inputClass').value = c.label; $('autoFontColor').checked = false; $('fontColor').value = c.text; $('fontColor').disabled = false; }
         else { cards.push(newCard(c)); renderCardList(); renderSheet(); }
         $('customColor').value = c.bg;
         renderClassColors();
@@ -408,8 +408,8 @@ body{font-family:'PingFang SC','Microsoft YaHei','Helvetica Neue',Arial,sans-ser
 
   // 拼版卡片
   function newCard(preset) {
-    const c = preset ? { id: uid++, cls: preset.label, name: '同学' + uid, slogan: '文明礼仪', org: '广州市番禺区富都小学', color: preset.bg, size: 'a6' } :
-                       { id: uid++, cls: '一1班', name: '同学' + uid, slogan: '文明礼仪', org: '广州市番禺区富都小学', color: '#1B2E91', size: 'a6' };
+    const c = preset ? { id: uid++, cls: preset.label, name: '同学' + uid, slogan: '文明礼仪', org: '广州市番禺区市桥富都小学', color: preset.bg, size: 'a6' } :
+                       { id: uid++, cls: '一1班', name: '同学' + uid, slogan: '文明礼仪', org: '广州市番禺区市桥富都小学', color: '#1B2E91', size: 'a6' };
     return c;
   }
   function renderCardList() {
