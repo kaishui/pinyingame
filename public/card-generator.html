@@ -407,27 +407,32 @@
             z-index: 2;
         }
 
-        .card-top {
+        .card-center {
+            flex: 1;
             display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            padding-bottom: 8px;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            gap: 12px;
+            padding: 12px 0;
         }
 
         .card-class {
-            font-size: 28px;
-            font-weight: 700;
-            letter-spacing: 1px;
+            font-size: 26px;
+            font-weight: 600;
+            letter-spacing: 3px;
             color: #1a1a2e;
             line-height: 1.2;
         }
 
         .card-name {
-            font-size: 28px;
+            font-size: 52px;
             font-weight: 700;
             color: #1a1a2e;
-            line-height: 1.2;
-            text-align: right;
+            line-height: 1.15;
+            letter-spacing: 4px;
+            text-align: center;
         }
 
         .card-bottom {
@@ -560,9 +565,11 @@
                 padding: 20px 16px;
                 border-radius: 12px;
             }
-            .card-class,
+            .card-class {
+                font-size: 18px;
+            }
             .card-name {
-                font-size: 20px;
+                font-size: 34px;
             }
             .card-slogan {
                 font-size: 16px;
@@ -701,6 +708,21 @@
                     </div>
                 </div>
 
+                <!-- 字体颜色 -->
+                <div class="control-group">
+                    <label>🖋️ 字体颜色</label>
+                    <div class="input-group">
+                        <div class="input-row">
+                            <label>颜色</label>
+                            <input type="color" id="fontColor" value="#ffffff" />
+                            <label style="display:flex;align-items:center;gap:6px;min-width:auto;margin-bottom:0;font-weight:500;font-size:13px;color:#555;cursor:pointer;">
+                                <input type="checkbox" id="autoFontColor" checked /> 自动
+                            </label>
+                        </div>
+                        <div class="text-muted" style="margin-top:2px;">勾选“自动”按背景明暗自动配字色；取消后可手动选字色。</div>
+                    </div>
+                </div>
+
                 <!-- 内容编辑 -->
                 <div class="control-group">
                     <label>✏️ 卡片内容</label>
@@ -750,7 +772,7 @@
                         <div class="deco deco-2"></div>
                         <!-- 内容 -->
                         <div class="card-content">
-                            <div class="card-top">
+                            <div class="card-center">
                                 <div class="card-class" id="previewClass">一1班</div>
                                 <div class="card-name" id="previewName">张三</div>
                             </div>
@@ -811,6 +833,8 @@
             const sizeOptions = document.getElementById('sizeOptions');
             const colorGrid = document.getElementById('colorGrid');
             const customColorInput = document.getElementById('customColor');
+            const fontColorInput = document.getElementById('fontColor');
+            const autoFontColor = document.getElementById('autoFontColor');
 
             const printBtn = document.getElementById('printBtn');
             const exportBtn = document.getElementById('exportBtn');
@@ -894,37 +918,56 @@
                 }
             });
 
+            // 字体颜色：自动 / 手动
+            autoFontColor.addEventListener('change', () => {
+                fontColorInput.disabled = autoFontColor.checked;
+                applyCardColor(currentColor);
+            });
+            fontColorInput.addEventListener('input', (e) => {
+                if (e.target.value && !autoFontColor.checked) {
+                    applyCardColor(currentColor);
+                }
+            });
+
             // ============================================================
             //  5. 应用卡片颜色
             // ============================================================
+            function hexWithAlpha(hex, alpha) {
+                const rgb = hexToRgb(hex);
+                if (!rgb) return 'rgba(0,0,0,' + alpha + ')';
+                return 'rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ',' + alpha + ')';
+            }
+
             function applyCardColor(hex) {
                 // 设置卡片背景色
                 cardEl.style.backgroundColor = hex;
-                // 文字颜色自适应
                 const rgb = hexToRgb(hex);
-                const textColor = rgb
-                    ? ((rgb.r * 299 + rgb.g * 587 + rgb.b * 114) / 1000 > 180 ? '#1a1a2e' : '#ffffff')
-                    : '#1a1a2e';
-                if (rgb) {
-                    const brightness = (rgb.r * 299 + rgb.g * 587 + rgb.b * 114) / 1000;
-                    const mutedColor = brightness > 180 ? 'rgba(0,0,0,0.55)' : 'rgba(255,255,255,0.70)';
-                    const borderColor = brightness > 180 ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.15)';
+                const brightness = rgb ? (rgb.r * 299 + rgb.g * 587 + rgb.b * 114) / 1000 : 255;
+                // 文字颜色：自动（按背景明暗）或手动
+                const useAuto = autoFontColor.checked;
+                const autoText = brightness > 180 ? '#1a1a2e' : '#ffffff';
+                const textColor = useAuto ? autoText : (fontColorInput.value || autoText);
+                // 机构文字：自动用半透明，手动用同色的低透明
+                const orgColor = useAuto
+                    ? (brightness > 180 ? 'rgba(0,0,0,0.55)' : 'rgba(255,255,255,0.70)')
+                    : hexWithAlpha(textColor, 0.65);
+                const borderColor = useAuto
+                    ? (brightness > 180 ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.15)')
+                    : hexWithAlpha(textColor, 0.15);
 
-                    cardEl.style.color = textColor;
-                    // 装饰用 currentColor
-                    cardEl.style.setProperty('--deco-color', textColor);
+                cardEl.style.color = textColor;
+                cardEl.style.setProperty('--deco-color', textColor);
 
-                    // 具体元素
-                    const els = [previewClass, previewName, previewSlogan];
-                    els.forEach(el => el.style.color = textColor);
-                    previewOrg.style.color = mutedColor;
-                    // 底部边框
-                    const bottom = cardEl.querySelector('.card-bottom');
-                    if (bottom) {
-                        bottom.style.borderTopColor = borderColor;
-                    }
+                const els = [previewClass, previewName, previewSlogan];
+                els.forEach(el => el.style.color = textColor);
+                previewOrg.style.color = orgColor;
+
+                const bottom = cardEl.querySelector('.card-bottom');
+                if (bottom) {
+                    bottom.style.borderTopColor = borderColor;
                 }
-                // 更新装饰颜色（用文字色做低透明度装饰，避免与背景同色而不可见）
+
+                // 更新装饰颜色（用文字色做低透明度装饰）
                 const decos = cardEl.querySelectorAll('.deco');
                 decos.forEach(d => d.style.color = textColor);
             }
@@ -954,9 +997,9 @@
 
                 // 字体大小微调
                 const fontSizeMap = {
-                    a3: { class: 34, name: 34, slogan: 24, org: 16 },
-                    a4: { class: 28, name: 28, slogan: 20, org: 14 },
-                    a5: { class: 22, name: 22, slogan: 16, org: 12 },
+                    a3: { class: 34, name: 72, slogan: 24, org: 16 },
+                    a4: { class: 26, name: 56, slogan: 20, org: 14 },
+                    a5: { class: 20, name: 42, slogan: 16, org: 12 },
                 };
                 const sizes = fontSizeMap[sizeKey] || fontSizeMap.a4;
                 previewClass.style.fontSize = sizes.class + 'px';
@@ -1136,6 +1179,8 @@
                 setSize('a4');
                 // 更新内容
                 updateContent();
+                // 字体颜色初始状态（默认自动）
+                fontColorInput.disabled = autoFontColor.checked;
                 // 应用颜色
                 applyCardColor(currentColor);
             }

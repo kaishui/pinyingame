@@ -1418,6 +1418,7 @@ function bindEvents() {
   $('go-level').addEventListener('click', () => { computeScope(); if (scope.empty) { toast('这个组合里没有关卡，换个年级或类型试试～'); return; } enterLevel(scope.start); });
   $('go-table').addEventListener('click', renderTable);
   $('go-cert').addEventListener('click', () => { if (allDone()) showCert(); else toast('🏆 还没全部通关哦，继续加油！'); });
+  $('go-card').addEventListener('click', () => { window.location.href = './card-generator.html'; });
   $('go-words').addEventListener('click', showWordMenu);
   $('word-back-btn').addEventListener('click', () => { stopSpeak(); renderHome(); });
   $('word-play-back-btn').addEventListener('click', () => { if (wordMode === 'text') showTextbookUnits(textGrade); else showWordMenu(); });
