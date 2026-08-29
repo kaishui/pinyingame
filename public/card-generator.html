@@ -82,12 +82,18 @@ body{font-family:'PingFang SC','Microsoft YaHei','Helvetica Neue',Arial,sans-ser
 /* 拼版 */
 .sheet{position:relative;background:#fff;box-shadow:0 14px 38px rgba(0,0,0,.18);border-radius:4px;width:100%;max-width:560px;aspect-ratio:0.7071}
 .sheet-card{position:absolute;overflow:hidden;display:flex;flex-direction:column;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,.10);transform-origin:center center}
+.sheet-card::after{content:'';position:absolute;inset:0;border:2px dashed rgba(231,76,60,.7);border-radius:4px;pointer-events:none}
+.sheet.no-cuts .sheet-card::after{display:none}
+.sheet-card.cut-on{box-shadow:0 0 0 3px rgba(45,52,54,.35)}
 .sheet-card .card-content{padding:9% 8%}
 .sheet-card .card-class{font-size:11px;padding:3px 8px;letter-spacing:1px}
 .sheet-card .card-name{font-size:22px;letter-spacing:2px}
 .sheet-card .card-slogan{font-size:10px;letter-spacing:3px}
 .sheet-card .card-org{font-size:8px}
 .empty-hint{color:#c0c4cc;text-align:center;padding:40px 0;font-size:14px}
+#cardModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;align-items:center;justify-content:center}
+#cardModal .modal-box{background:#fff;padding:18px;border-radius:14px;max-width:90vw;max-height:90vh;overflow:auto;position:relative}
+#modalClose{position:absolute;top:8px;right:8px;width:30px;height:30px;border:none;background:#ffecec;color:#e74c3c;border-radius:8px;font-size:16px;cursor:pointer;z-index:5}
 
 /* 卡片列表(拼版) */
 .card-list{display:flex;flex-direction:column;gap:9px}
@@ -245,8 +251,9 @@ body{font-family:'PingFang SC','Microsoft YaHei','Helvetica Neue',Arial,sans-ser
     { key:'a3',label:'A3',w:297,h:420 },{ key:'a4',label:'A4',w:210,h:297 },
     { key:'a5',label:'A5',w:148,h:210 },{ key:'a6',label:'A6',w:105,h:148 },
     { key:'a7',label:'A7',w:74,h:105 },{ key:'a8',label:'A8',w:52,h:74 },
+    { key:'6',label:'6寸',w:102,h:152 },
   ];
-  const SHEET_SIZES = ['a3','a4','a5'];
+  const SHEET_SIZES = ['a3','a4','a5','a6'];
   const ASPECT = 1 / Math.SQRT2;
   const sizeOf = (k) => SIZES.find(s => s.key === k);
 
@@ -286,8 +293,10 @@ body{font-family:'PingFang SC','Microsoft YaHei','Helvetica Neue',Arial,sans-ser
   // 单卡样式
   function applyStyle() {
     const tc = resolveTextColor(currentColor);
+    const sz = sizeOf(currentSize);
     cardEl.style.backgroundColor = currentColor;
     cardEl.style.color = tc;
+    cardEl.style.aspectRatio = sz ? (sz.w / sz.h) : String(ASPECT);
     cardEl.style.transform = rotation ? `rotate(${rotation}deg)` : '';
     cardContent.classList.toggle('vert', textDir === 'vert');
     cardMid.classList.toggle('stack', arrangement === 'stack');
@@ -370,7 +379,7 @@ body{font-family:'PingFang SC','Microsoft YaHei','Helvetica Neue',Arial,sans-ser
       item.innerHTML =
         `<div class="li-top"><input class="li-name" placeholder="姓名" value="${esc(c.name)}">` +
         `<input class="li-cls" placeholder="班级" value="${esc(c.cls)}">` +
-        `<select class="li-size">${['a5','a6','a7','a8'].map(k=>`<option value="${k}" ${k===c.size?'selected':''}>${sizeOf(k).label}</option>`).join('')}</select>` +
+        `<select class="li-size">${['6','a5','a6','a7','a8'].map(k=>`<option value="${k}" ${k===c.size?'selected':''}>${sizeOf(k).label}</option>`).join('')}</select>` +
         `<input type="color" class="li-color" value="${c.color}">` +
         `<button class="li-del">✕</button></div>` +
         `<div class="li-bot"><input class="li-slogan" placeholder="标语" value="${esc(c.slogan)}">` +
@@ -419,6 +428,9 @@ body{font-family:'PingFang SC','Microsoft YaHei','Helvetica Neue',Arial,sans-ser
       d.style.width = (w/sheet.w*100)+'%'; d.style.height = (h/sheet.h*100)+'%';
       d.style.backgroundColor = c.color; d.style.color = resolveTextColor(c.color);
       d.style.transform = rotation ? `rotate(${rotation}deg)` : '';
+      d.style.cursor = 'pointer';
+      d.dataset.cid = c.id;
+      d.onclick = (ev) => { ev.stopPropagation(); $('sheetPreview').querySelectorAll('.sheet-card').forEach(x=>x.style.zIndex=''); d.style.zIndex = 50; openCardModal(c); };
       d.innerHTML = cardInnerHTML(c);
       const nameSize = Math.max(9, Math.round(h/sheet.h*46));
       d.querySelector('.card-name').style.fontSize = nameSize+'px';
@@ -427,6 +439,27 @@ body{font-family:'PingFang SC','Microsoft YaHei','Helvetica Neue',Arial,sans-ser
       d.querySelector('.card-org').style.fontSize = Math.max(6, Math.round(nameSize*0.28))+'px';
       $('sheetPreview').appendChild(d);
     });
+  }
+
+  function openCardModal(c) {
+    const tc = resolveTextColor(c.color);
+    const box = document.createElement('div');
+    box.className = 'card';
+    box.style.width = '300px';
+    box.style.maxWidth = '300px';
+    box.style.position = 'relative';
+    box.style.aspectRatio = (sizeOf(c.size).w / sizeOf(c.size).h);
+    box.style.backgroundColor = c.color;
+    box.style.color = tc;
+    box.innerHTML = cardInnerHTML(c);
+    const nameSize = 44, classSize = 19, sloganSize = 17, orgSize = 12;
+    box.querySelector('.card-name').style.fontSize = nameSize+'px';
+    box.querySelector('.card-class').style.fontSize = classSize+'px';
+    box.querySelector('.card-slogan').style.fontSize = sloganSize+'px';
+    box.querySelector('.card-org').style.fontSize = orgSize+'px';
+    $('modalBody').innerHTML = '';
+    $('modalBody').appendChild(box);
+    $('cardModal').style.display = 'flex';
   }
 
   function setMode(m) {
@@ -463,12 +496,14 @@ body{font-family:'PingFang SC','Microsoft YaHei','Helvetica Neue',Arial,sans-ser
   }
   async function exportPNG() {
     const target = mode==='single'?cardEl:$('sheetPreview');
+    if (mode==='sheet') $('sheetPreview').classList.add('no-cuts');
     try {
       const canvas = await html2canvas(target, { scale:4, useCORS:true, backgroundColor: mode==='single'?(cardEl.style.backgroundColor||'#fff'):'#fff', logging:false });
       const a = document.createElement('a');
-      a.download = mode==='single' ? `挂牌底卡_${currentSize.toUpperCase()}_${$('inputName').value||'姓名'}.png` : `挂牌底卡_拼版_${sheetSize.toUpperCase()}_${cards.length}张.png`;
+      a.download = mode==='single' ? `挂牌底卡_${sizeOf(currentSize).label}_${$('inputName').value||'姓名'}.png` : `挂牌底卡_拼版_${sizeOf(sheetSize).label}_${cards.length}张.png`;
       a.href = canvas.toDataURL('image/png'); a.click();
     } catch(e){ alert('导出失败，请重试。'); }
+    finally { if (mode==='sheet') $('sheetPreview').classList.remove('no-cuts'); }
   }
 
   $('modeTabs').addEventListener('click',(e)=>{const t=e.target.closest('.mode-tab'); if(t) setMode(t.dataset.mode);});
@@ -479,6 +514,9 @@ body{font-family:'PingFang SC','Microsoft YaHei','Helvetica Neue',Arial,sans-ser
   $('addCardBtn').addEventListener('click',()=>{ cards.push(newCard()); renderCardList(); renderSheet(); });
   $('printBtn').addEventListener('click', printTarget);
   $('exportBtn').addEventListener('click', exportPNG);
+  $('cardModal').addEventListener('click', (e) => {
+    if (e.target === $('cardModal') || e.target.id === 'modalClose') $('cardModal').style.display = 'none';
+  });
 
   bindOpts('arrangeRow', v => arrangement = v);
   bindOpts('dirRow', v => textDir = v);
@@ -495,5 +533,6 @@ body{font-family:'PingFang SC','Microsoft YaHei','Helvetica Neue',Arial,sans-ser
   window.__cardGen = { setMode, exportPNG, printTarget };
 })();
 </script>
+<div id="cardModal"><div class="modal-box"><button id="modalClose">✕</button><div id="modalBody"></div></div></div>
 </body>
 </html>
