@@ -54,7 +54,8 @@ body{font-family:'PingFang SC','Microsoft YaHei','Helvetica Neue',Arial,sans-ser
 .text-el{position:absolute;transform:translate(-50%,-50%);transform-origin:center center;cursor:grab;white-space:nowrap;user-select:none;touch-action:none;padding:2px 6px;border-radius:4px;font-weight:700;line-height:1.18;min-width:10px;min-height:1em;outline:none;text-align:center;z-index:2}
 .text-el:active{cursor:grabbing}
 .text-el:focus{outline:1.5px dashed rgba(45,52,54,.85);outline-offset:2px}
-.text-el[contenteditable]:empty::before{content:''}
+.text-el.empty::before{content:attr(data-placeholder);color:inherit;opacity:.4}
+.paper.exporting .text-el.empty{display:none!important}
 
 @media (max-width:880px){
   .main-layout{flex-direction:column-reverse}
@@ -118,6 +119,16 @@ body{font-family:'PingFang SC','Microsoft YaHei','Helvetica Neue',Arial,sans-ser
         </div>
       </div>
 
+      <!-- 编辑内容表格 -->
+      <div class="control-group"><label>✏️ 编辑内容</label>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div class="input-row" style="margin-top:0;"><label>班级</label><input type="text" id="f_cls" placeholder="输入班级" /></div>
+          <div class="input-row" style="margin-top:0;"><label>姓名</label><input type="text" id="f_name" placeholder="输入名字" /></div>
+          <div class="input-row" style="margin-top:0;"><label>标语</label><input type="text" id="f_slogan" placeholder="输入标语（可留空）" /></div>
+          <div class="input-row" style="margin-top:0;"><label>学校</label><input type="text" id="f_org" placeholder="输入学校（可留空）" /></div>
+        </div>
+      </div>
+
       <!-- 操作 -->
       <div class="control-group" style="background:transparent;padding:0">
         <div class="action-buttons">
@@ -158,10 +169,10 @@ body{font-family:'PingFang SC','Microsoft YaHei','Helvetica Neue',Arial,sans-ser
   ];
   // 文字元素定义
   const FIELDS = [
-    { key:'cls', label:'班级', def:'一1班', fs:20 },
-    { key:'name', label:'姓名', def:'张三丰', fs:46 },
-    { key:'slogan', label:'标语', def:'文明礼仪', fs:18 },
-    { key:'org', label:'学校', def:'广州市番禺区市桥富都小学', fs:13 },
+    { key:'cls', label:'班级', def:'一1班', fs:20, ph:'输入班级' },
+    { key:'name', label:'姓名', def:'张三丰', fs:46, ph:'输入名字' },
+    { key:'slogan', label:'标语', def:'文明礼仪', fs:18, ph:'输入标语' },
+    { key:'org', label:'学校', def:'广州市番禺区市桥富都小学', fs:13, ph:'输入学校' },
   ];
   // 排版预设（位置 x/y 百分比）
   const LAYOUTS = [
@@ -234,7 +245,7 @@ body{font-family:'PingFang SC','Microsoft YaHei','Helvetica Neue',Arial,sans-ser
   }
   function setElText(key, txt){
     const el = document.querySelector(`.text-el[data-key="${key}"]`);
-    if (el) { el.textContent = txt; updateVisible(el); }
+    if (el) { el.textContent = txt; updateEmpty(el); fitText(el, el.closest('.card')); }
   }
 
   // ===== 渲染卡片 =====
@@ -264,14 +275,17 @@ body{font-family:'PingFang SC','Microsoft YaHei','Helvetica Neue',Arial,sans-ser
       el.className = 'text-el';
       el.dataset.key = f.key;
       el.dataset.fs = f.fs;
+      el.dataset.ph = f.ph;
       el.contentEditable = 'true';
       el.textContent = f.def;
       el.style.fontSize = f.fs + 'px';
       applyTransform(el, f.key, counter);
-      el.addEventListener('input', () => { updateVisible(el); fitText(el, card); });
+      el.addEventListener('input', () => { updateEmpty(el); fitText(el, card); syncCardToForm(f.key); });
+      el.addEventListener('blur', () => { updateEmpty(el); syncCardToForm(f.key); });
       el.addEventListener('pointerdown', (e) => startDrag(e, f.key, card, counter));
       card.appendChild(el);
       fitText(el, card);
+      updateEmpty(el);
     });
     paper.appendChild(card);
     stage.appendChild(paper);
@@ -282,8 +296,10 @@ body{font-family:'PingFang SC','Microsoft YaHei','Helvetica Neue',Arial,sans-ser
     el.style.top = e.y + '%';
     el.style.transform = `translate(-50%,-50%) rotate(${counter}deg)`;
   }
-  function updateVisible(el){
-    el.style.display = el.textContent.replace(/\s/g,'') === '' ? 'none' : '';
+  function updateEmpty(el){
+    const isEmpty = (el.textContent || '').trim() === '';
+    el.classList.toggle('empty', isEmpty);
+    if (isEmpty && el.innerHTML !== '') el.innerHTML = ''; // 去掉空内容里的 <br>，让占位符显示
   }
   // 多字自动缩小字号，保证不换行且不超出卡片宽度
   function fitText(el, card){
@@ -328,6 +344,7 @@ body{font-family:'PingFang SC','Microsoft YaHei','Helvetica Neue',Arial,sans-ser
     $('customColor').value = '#1B2E91';
     renderClassColors(); renderSizes(); renderCard();
     setElText('cls','一1班'); setElText('name','张三丰'); setElText('slogan','文明礼仪'); setElText('org','广州市番禺区市桥富都小学');
+    syncAllToForm();
     // 重置旋转按钮高亮
     document.querySelectorAll('#rotateRow .opt-btn').forEach(x=>x.classList.toggle('active', x.dataset.val==='0'));
   }
@@ -354,6 +371,15 @@ body{font-family:'PingFang SC','Microsoft YaHei','Helvetica Neue',Arial,sans-ser
     finally { target.classList.remove('exporting'); }
   }
 
+  // ===== 表单同步 =====
+  const FORM_MAP = { cls:'f_cls', name:'f_name', slogan:'f_slogan', org:'f_org' };
+  function syncCardToForm(key){
+    const el = document.querySelector(`.text-el[data-key="${key}"]`);
+    const inp = $(FORM_MAP[key]);
+    if (inp) inp.value = el ? el.textContent : '';
+  }
+  function syncAllToForm(){ FIELDS.forEach(f => syncCardToForm(f.key)); }
+
   // ===== 事件 =====
   $('customColor').addEventListener('input', e => { currentColor = e.target.value; renderClassColors(); renderCard(); });
   $('customW').addEventListener('input', ()=>{ if (useCustom) renderCard(); });
@@ -369,12 +395,17 @@ body{font-family:'PingFang SC','Microsoft YaHei','Helvetica Neue',Arial,sans-ser
     document.querySelectorAll('#rotateRow .opt-btn').forEach(x=>x.classList.remove('active'));
     b.classList.add('active'); cardRotation = Number(b.dataset.val); renderCard();
   });
+  // 表格输入 → 卡片
+  FIELDS.forEach(f => {
+    $(FORM_MAP[f.key]).addEventListener('input', e => { setElText(f.key, e.target.value); });
+  });
 
   // ===== 初始化 =====
   function init(){
     $('fontColor').disabled = true;
     renderClassColors(); renderSizes(); renderLayouts(); renderCard();
     setElText('cls','一1班'); setElText('name','张三丰'); setElText('slogan','文明礼仪'); setElText('org','广州市番禺区市桥富都小学');
+    syncAllToForm();
   }
   init();
   window.__cardGen = { resetAll, exportPNG };
