@@ -4,704 +4,182 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>挂牌底卡生成器</title>
-    <!-- 引入 html2canvas 用于导出图片 -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js">
-    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
-        /* ===== 全局重置 & 基础 ===== */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif;
-            background: #f0f2f5;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 24px;
+            background: #eef0f4; min-height: 100vh;
+            display: flex; justify-content: center; align-items: flex-start; padding: 20px;
         }
-
-        /* ===== 主容器 ===== */
         .app-container {
-            max-width: 1400px;
-            width: 100%;
-            background: #ffffff;
-            border-radius: 28px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.10);
-            padding: 32px 40px 40px;
-            transition: all 0.2s;
+            width: 100%; max-width: 1320px; background: #fff; border-radius: 24px;
+            box-shadow: 0 16px 50px rgba(0,0,0,.10); padding: 28px 32px 34px;
         }
+        .app-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 22px; padding-bottom: 14px; border-bottom: 2px solid #f0f2f5; }
+        .app-header h1 { font-size: 24px; font-weight: 800; color: #1a1a2e; }
+        .app-header h1 small { font-size: 13px; font-weight: 400; color: #999; margin-left: 6px; }
+        .header-hint { font-size: 13px; color: #999; background: #f5f6fa; padding: 6px 14px; border-radius: 30px; }
 
-        /* ===== 标题 ===== */
-        .app-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            margin-bottom: 28px;
-            padding-bottom: 16px;
-            border-bottom: 2px solid #f0f2f5;
-        }
+        .main-layout { display: flex; gap: 32px; flex-wrap: wrap; }
+        .control-panel { flex: 0 0 340px; min-width: 280px; display: flex; flex-direction: column; gap: 16px; }
+        .preview-panel { flex: 1; min-width: 420px; background: #f7f8fb; border-radius: 18px; padding: 22px 16px; display: flex; flex-direction: column; align-items: center; min-height: 560px; }
 
-        .app-header h1 {
-            font-size: 26px;
-            font-weight: 700;
-            color: #1a1a2e;
-            letter-spacing: 0.5px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+        .control-group { background: #f8f9fc; border-radius: 14px; padding: 16px 18px; }
+        .control-group > label { display: block; font-size: 14px; font-weight: 700; color: #2d3436; margin-bottom: 10px; }
+        .control-group > label .unit { font-weight: 400; color: #999; font-size: 12px; margin-left: 4px; }
 
-        .app-header h1 small {
-            font-size: 15px;
-            font-weight: 400;
-            color: #888;
-            margin-left: 6px;
-        }
+        /* 模式切换 */
+        .mode-tabs { display: flex; gap: 10px; }
+        .mode-tab { flex: 1; padding: 10px 0; border: 2px solid #dfe6e9; border-radius: 10px; background: #fff; font-size: 15px; font-weight: 700; color: #666; cursor: pointer; text-align: center; transition: .15s; }
+        .mode-tab.active { background: #2d3436; color: #fff; border-color: #2d3436; }
 
-        .header-hint {
-            font-size: 14px;
-            color: #999;
-            background: #f5f6fa;
-            padding: 6px 16px;
-            border-radius: 30px;
-        }
+        /* 尺寸按钮 */
+        .size-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+        .size-btn { padding: 9px 0; border: 2px solid #dfe6e9; border-radius: 9px; background: #fff; font-size: 14px; font-weight: 700; color: #555; cursor: pointer; text-align: center; transition: .15s; }
+        .size-btn.active { background: #2d3436; color: #fff; border-color: #2d3436; }
 
-        /* ===== 主体布局 ===== */
-        .main-layout {
-            display: flex;
-            gap: 40px;
-            flex-wrap: wrap;
-        }
+        /* 色卡：正方格横排 */
+        .color-row { display: flex; gap: 9px; overflow-x: auto; padding: 3px 2px 6px; }
+        .color-swatch { flex: 0 0 auto; width: 42px; height: 42px; border-radius: 9px; border: 3px solid transparent; cursor: pointer; position: relative; transition: .15s; box-shadow: 0 2px 5px rgba(0,0,0,.08); }
+        .color-swatch:hover { transform: scale(1.08); }
+        .color-swatch.active { border-color: #2d3436; box-shadow: 0 0 0 2px #fff, 0 0 0 5px #2d3436; }
+        .color-swatch .ck { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 16px; text-shadow: 0 1px 3px rgba(0,0,0,.5); opacity: 0; }
+        .color-swatch.active .ck { opacity: 1; }
+        .custom-color-row { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+        .custom-color-row input[type="color"] { width: 40px; height: 40px; border: 2px solid #dfe6e9; border-radius: 8px; cursor: pointer; padding: 2px; background: #fff; }
+        .custom-color-row span { font-size: 12px; color: #888; }
 
-        /* ===== 左侧控制面板 ===== */
-        .control-panel {
-            flex: 0 0 320px;
-            min-width: 260px;
-            display: flex;
-            flex-direction: column;
-            gap: 22px;
-        }
+        /* 输入 */
+        .input-group { display: flex; flex-direction: column; gap: 10px; }
+        .input-row { display: flex; align-items: center; gap: 10px; }
+        .input-row label { font-size: 13px; font-weight: 600; color: #555; min-width: 44px; }
+        .input-row input, .input-row textarea { flex: 1; padding: 8px 12px; border: 2px solid #dfe6e9; border-radius: 9px; font-size: 14px; font-family: inherit; background: #fff; outline: none; min-width: 0; }
+        .input-row input:focus, .input-row textarea:focus { border-color: #2d3436; }
+        .auto-font { display: flex; align-items: center; gap: 5px; min-width: auto; font-weight: 500; font-size: 12px; color: #555; cursor: pointer; }
 
-        .control-group {
-            background: #f8f9fc;
-            border-radius: 16px;
-            padding: 18px 20px 20px;
-            transition: 0.2s;
-        }
+        /* 拼版卡片列表 */
+        .sheet-size-row { display: flex; align-items: center; gap: 10px; }
+        .card-list { display: flex; flex-direction: column; gap: 10px; }
+        .list-item { background: #fff; border: 2px solid #eef0f5; border-radius: 12px; padding: 12px; }
+        .list-item .li-top { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+        .list-item input, .list-item select { padding: 7px 10px; border: 2px solid #e5e8ee; border-radius: 8px; font-size: 13px; font-family: inherit; outline: none; }
+        .list-item .li-name { flex: 1; min-width: 70px; }
+        .list-item .li-cls { width: 70px; }
+        .list-item select { width: 64px; }
+        .list-item .li-color { width: 36px; height: 36px; padding: 2px; border: 2px solid #e5e8ee; border-radius: 8px; cursor: pointer; }
+        .list-item .li-del { margin-left: auto; border: none; background: #ffecec; color: #e74c3c; border-radius: 8px; width: 30px; height: 30px; font-size: 16px; cursor: pointer; }
+        .list-item .li-bot { display: flex; gap: 8px; }
+        .list-item .li-bot input { flex: 1; min-width: 0; }
+        .add-card-btn { padding: 10px; border: 2px dashed #c9ced6; border-radius: 10px; background: #fff; color: #666; font-size: 14px; font-weight: 700; cursor: pointer; }
+        .add-card-btn:hover { border-color: #2d3436; color: #2d3436; }
 
-        .control-group:hover {
-            background: #f5f6fb;
-        }
+        /* 操作按钮 */
+        .action-buttons { display: flex; gap: 10px; }
+        .action-btn { flex: 1; padding: 12px; border: none; border-radius: 11px; font-size: 15px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: .15s; }
+        .action-btn.primary { background: #2d3436; color: #fff; }
+        .action-btn.success { background: #00b894; color: #fff; }
+        .action-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,.15); }
+        .hint-line { margin-top: 8px; font-size: 11.5px; color: #bbb; text-align: center; }
 
-        .control-group label {
-            display: block;
-            font-size: 14px;
-            font-weight: 600;
-            color: #2d3436;
-            margin-bottom: 10px;
-            letter-spacing: 0.3px;
-        }
+        /* ===== 卡片预览 ===== */
+        .preview-label { font-size: 12px; color: #bbb; letter-spacing: 1px; margin-bottom: 12px; }
+        .stage { display: flex; align-items: center; justify-content: center; width: 100%; }
 
-        .control-group label .unit {
-            font-weight: 400;
-            color: #999;
-            font-size: 12px;
-            margin-left: 4px;
-        }
-
-        /* ---- 尺寸选择 ---- */
-        .size-options {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        .size-btn {
-            flex: 1;
-            min-width: 60px;
-            padding: 10px 0;
-            border: 2px solid #dfe6e9;
-            border-radius: 10px;
-            background: #fff;
-            font-size: 15px;
-            font-weight: 600;
-            color: #555;
-            cursor: pointer;
-            transition: 0.2s;
-            text-align: center;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
-        }
-
-        .size-btn:hover {
-            border-color: #b0b8c0;
-            background: #fafafa;
-        }
-
-        .size-btn.active {
-            border-color: #2d3436;
-            background: #2d3436;
-            color: #fff;
-            box-shadow: 0 4px 12px rgba(45, 52, 54, 0.25);
-        }
-
-        .size-btn .sub {
-            display: block;
-            font-size: 10px;
-            font-weight: 400;
-            opacity: 0.7;
-            margin-top: 2px;
-        }
-
-        .size-btn.active .sub {
-            opacity: 0.85;
-        }
-
-        /* ---- 色卡选择 ---- */
-        .color-grid {
-            display: grid;
-            grid-template-columns: repeat(6, 1fr);
-            gap: 10px;
-        }
-
-        .color-swatch {
-            width: 100%;
-            aspect-ratio: 1/1;
-            border-radius: 12px;
-            border: 3px solid transparent;
-            cursor: pointer;
-            transition: 0.2s;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
-            position: relative;
-        }
-
-        .color-swatch:hover {
-            transform: scale(1.05);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        }
-
-        .color-swatch.active {
-            border-color: #2d3436;
-            box-shadow: 0 0 0 2px #fff, 0 0 0 5px #2d3436;
-            transform: scale(1.04);
-        }
-
-        .color-swatch .check-mark {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 18px;
-            color: #fff;
-            text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
-            opacity: 0;
-            transition: 0.2s;
-            pointer-events: none;
-        }
-
-        .color-swatch.active .check-mark {
-            opacity: 1;
-        }
-
-        /* 自定义颜色 */
-        .custom-color-row {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-top: 12px;
-        }
-
-        .custom-color-row input[type="color"] {
-            width: 42px;
-            height: 42px;
-            border: 2px solid #dfe6e9;
-            border-radius: 10px;
-            cursor: pointer;
-            padding: 2px;
-            background: #fff;
-        }
-
-        .custom-color-row input[type="color"]:hover {
-            border-color: #b0b8c0;
-        }
-
-        .custom-color-row span {
-            font-size: 13px;
-            color: #888;
-        }
-
-        /* ---- 内容编辑 ---- */
-        .input-group {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .input-row {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .input-row label {
-            font-size: 14px;
-            font-weight: 500;
-            color: #444;
-            min-width: 56px;
-            margin-bottom: 0;
-        }
-
-        .input-row input,
-        .input-row textarea {
-            flex: 1;
-            padding: 10px 14px;
-            border: 2px solid #dfe6e9;
-            border-radius: 10px;
-            font-size: 14px;
-            font-family: inherit;
-            background: #fff;
-            transition: 0.2s;
-            outline: none;
-            min-width: 0;
-        }
-
-        .input-row input:focus,
-        .input-row textarea:focus {
-            border-color: #2d3436;
-            box-shadow: 0 0 0 3px rgba(45, 52, 54, 0.10);
-        }
-
-        .input-row textarea {
-            resize: vertical;
-            min-height: 44px;
-            line-height: 1.5;
-        }
-
-        .input-row .input-hint {
-            font-size: 11px;
-            color: #aaa;
-            white-space: nowrap;
-        }
-
-        /* ---- 操作按钮 ---- */
-        .action-buttons {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-
-        .action-btn {
-            flex: 1;
-            min-width: 100px;
-            padding: 12px 16px;
-            border: none;
-            border-radius: 12px;
-            font-size: 15px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            background: #fff;
-            color: #2d3436;
-            border: 2px solid #dfe6e9;
-        }
-
-        .action-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
-        }
-
-        .action-btn.primary {
-            background: #2d3436;
-            color: #fff;
-            border-color: #2d3436;
-        }
-
-        .action-btn.primary:hover {
-            background: #1a1a2e;
-            border-color: #1a1a2e;
-            box-shadow: 0 6px 24px rgba(45, 52, 54, 0.30);
-        }
-
-        .action-btn.success {
-            background: #00b894;
-            color: #fff;
-            border-color: #00b894;
-        }
-
-        .action-btn.success:hover {
-            background: #00a381;
-            border-color: #00a381;
-            box-shadow: 0 6px 24px rgba(0, 184, 148, 0.30);
-        }
-
-        .action-btn .icon {
-            font-size: 18px;
-        }
-
-        /* ===== 右侧预览区域 ===== */
-        .preview-panel {
-            flex: 1;
-            min-width: 420px;
-            background: #f8f9fc;
-            border-radius: 20px;
-            padding: 30px 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 560px;
-            position: relative;
-        }
-
-        .preview-panel .preview-label {
-            font-size: 13px;
-            color: #bbb;
-            margin-bottom: 16px;
-            letter-spacing: 1px;
-            font-weight: 500;
-        }
-
-        /* ---- 卡片预览容器 ---- */
-        .card-preview-wrapper {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-            padding: 12px 0;
-        }
-
-        /* 实际卡片 — 在预览中按比例缩放 */
+        /* 单卡 */
         .card {
-            background: #ffffff;
-            border-radius: 16px;
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.10);
-            padding: 32px 28px;
-            width: 100%;
-            max-width: 420px;
-            aspect-ratio: 210 / 297;
-            /* 默认 A4 比例 */
-            display: flex;
-            flex-direction: column;
-            transition: all 0.25s ease;
-            position: relative;
-            overflow: hidden;
-            /* 背景色由 JS 动态控制 */;
+            position: relative; overflow: hidden;
+            width: 100%; max-width: 400px; aspect-ratio: 0.7071;
+            display: flex; flex-direction: column;
+            border-radius: 14px; box-shadow: 0 14px 40px rgba(0,0,0,.16);
+        }
+        .card .corner { position: absolute; width: 30px; height: 30px; border: 3px solid currentColor; opacity: .55; pointer-events: none; z-index: 3; }
+        .card .corner-tl { top: 14px; left: 14px; border-right: none; border-bottom: none; border-top-left-radius: 6px; }
+        .card .corner-br { bottom: 14px; right: 14px; border-left: none; border-top: none; border-bottom-right-radius: 6px; }
+        .card .deco { position: absolute; border-radius: 50%; opacity: .07; pointer-events: none; z-index: 1; background: currentColor; }
+        .card .deco-1 { width: 60%; height: 60%; top: -18%; right: -16%; }
+        .card .deco-2 { width: 34%; height: 34%; bottom: -10%; left: -8%; }
+        .card-content { flex: 1; display: flex; flex-direction: column; justify-content: space-between; position: relative; z-index: 2; padding: 12% 10%; }
+
+        .card-mid { flex: 1; display: flex; align-items: center; justify-content: center; gap: 16px; flex-wrap: wrap; text-align: center; }
+        .card-class { font-size: 20px; font-weight: 700; letter-spacing: 2px; padding: 5px 14px; border: 2px solid currentColor; border-radius: 999px; opacity: .95; white-space: nowrap; }
+        .card-name { font-size: 46px; font-weight: 800; letter-spacing: 5px; line-height: 1.1; }
+        .card-bottom { text-align: center; }
+        .card-slogan { font-size: 18px; font-weight: 700; letter-spacing: 5px; margin-bottom: 4px; }
+        .card-org { font-size: 13px; opacity: .78; letter-spacing: 1px; }
+
+        /* 拼版 */
+        .sheet { position: relative; background: #fff; box-shadow: 0 14px 40px rgba(0,0,0,.18); border-radius: 4px; width: 100%; max-width: 560px; aspect-ratio: 0.7071; }
+        .sheet-card { position: absolute; overflow: hidden; display: flex; flex-direction: column; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,.10); }
+        .sheet-card .card-content { padding: 9% 8%; }
+        .sheet-card .card-class { font-size: 11px; padding: 3px 8px; letter-spacing: 1px; }
+        .sheet-card .card-name { font-size: 22px; letter-spacing: 2px; }
+        .sheet-card .card-slogan { font-size: 10px; letter-spacing: 3px; }
+        .sheet-card .card-org { font-size: 8px; }
+        .sheet-card .corner { width: 14px; height: 14px; border-width: 2px; top: 6px; left: 6px; }
+        .sheet-card .corner-br { top: auto; left: auto; bottom: 6px; right: 6px; }
+        .empty-hint { color: #c0c4cc; text-align: center; padding: 40px 0; font-size: 14px; }
+
+        /* 响应式 */
+        @media (max-width: 900px) {
+            .main-layout { flex-direction: column; }
+            .control-panel { flex: 1; width: 100%; }
+            .preview-panel { min-width: 0; min-height: 400px; }
+            .card { max-width: 320px; }
+            .sheet { max-width: 360px; }
+        }
+        @media (max-width: 560px) {
+            .app-container { padding: 14px 12px; border-radius: 16px; }
+            .size-grid { grid-template-columns: repeat(4, 1fr); }
+            .card { max-width: 260px; }
+            .card-name { font-size: 34px; }
+            .sheet { max-width: 300px; }
         }
 
-        /* 卡片内容 */
-        .card-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            position: relative;
-            z-index: 2;
-        }
-
-        .card-center {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            gap: 12px;
-            padding: 12px 0;
-        }
-
-        .card-class {
-            font-size: 26px;
-            font-weight: 600;
-            letter-spacing: 3px;
-            color: #1a1a2e;
-            line-height: 1.2;
-        }
-
-        .card-name {
-            font-size: 52px;
-            font-weight: 700;
-            color: #1a1a2e;
-            line-height: 1.15;
-            letter-spacing: 4px;
-            text-align: center;
-        }
-
-        .card-bottom {
-            text-align: center;
-            padding-top: 12px;
-            border-top: 2px solid rgba(0, 0, 0, 0.06);
-        }
-
-        .card-slogan {
-            font-size: 20px;
-            font-weight: 600;
-            color: #1a1a2e;
-            letter-spacing: 6px;
-            margin-bottom: 4px;
-        }
-
-        .card-org {
-            font-size: 14px;
-            font-weight: 400;
-            color: #555;
-            letter-spacing: 1px;
-            opacity: 0.8;
-        }
-
-        /* 装饰背景元素 */
-        .card .deco {
-            position: absolute;
-            border-radius: 50%;
-            opacity: 0.06;
-            pointer-events: none;
-            z-index: 1;
-        }
-
-        .card .deco-1 {
-            width: 200px;
-            height: 200px;
-            top: -60px;
-            right: -60px;
-            background: currentColor;
-        }
-
-        .card .deco-2 {
-            width: 120px;
-            height: 120px;
-            bottom: -30px;
-            left: -30px;
-            background: currentColor;
-        }
-
-        /* ===== 响应式 ===== */
-        @media (max-width: 1024px) {
-            .app-container {
-                padding: 24px 20px;
-            }
-            .main-layout {
-                flex-direction: column;
-            }
-            .control-panel {
-                flex: 1;
-                width: 100%;
-            }
-            .preview-panel {
-                min-width: 0;
-                min-height: 400px;
-                padding: 24px 16px;
-            }
-            .card {
-                max-width: 340px;
-            }
-            .color-grid {
-                grid-template-columns: repeat(6, 1fr);
-            }
-        }
-
-        @media (max-width: 600px) {
-            .app-container {
-                padding: 16px 12px;
-                border-radius: 16px;
-            }
-            .app-header h1 {
-                font-size: 20px;
-            }
-            .app-header h1 small {
-                font-size: 12px;
-                display: block;
-                margin-left: 0;
-            }
-            .header-hint {
-                font-size: 11px;
-                padding: 4px 12px;
-            }
-            .control-panel {
-                gap: 16px;
-            }
-            .control-group {
-                padding: 14px 14px 16px;
-            }
-            .size-btn {
-                font-size: 13px;
-                padding: 8px 0;
-            }
-            .color-grid {
-                grid-template-columns: repeat(6, 1fr);
-                gap: 8px;
-            }
-            .input-row {
-                flex-wrap: wrap;
-                gap: 6px;
-            }
-            .input-row label {
-                min-width: 40px;
-                font-size: 13px;
-            }
-            .input-row input,
-            .input-row textarea {
-                font-size: 13px;
-                padding: 8px 12px;
-            }
-            .action-btn {
-                font-size: 13px;
-                padding: 10px 12px;
-                min-width: 70px;
-            }
-            .preview-panel {
-                min-height: 300px;
-                padding: 16px 10px;
-            }
-            .card {
-                max-width: 280px;
-                padding: 20px 16px;
-                border-radius: 12px;
-            }
-            .card-class {
-                font-size: 18px;
-            }
-            .card-name {
-                font-size: 34px;
-            }
-            .card-slogan {
-                font-size: 16px;
-                letter-spacing: 4px;
-            }
-            .card-org {
-                font-size: 12px;
-            }
-            .card-bottom {
-                padding-top: 8px;
-            }
-        }
-
-        /* ===== 打印样式 ===== */
+        /* 打印 */
         @media print {
-            body {
-                background: #fff;
-                padding: 0;
-                margin: 0;
-            }
-            .app-container {
-                box-shadow: none;
-                border-radius: 0;
-                padding: 0;
-                max-width: 100%;
-                background: transparent;
-            }
-            .app-header,
-            .control-panel,
-            .preview-label,
-            .preview-panel .preview-label {
-                display: none !important;
-            }
-            .preview-panel {
-                background: transparent !important;
-                padding: 0 !important;
-                min-height: auto !important;
-                border-radius: 0 !important;
-            }
-            .card-preview-wrapper {
-                padding: 0 !important;
-            }
-            .card {
-                box-shadow: none !important;
-                border-radius: 0 !important;
-                max-width: 100% !important;
-                aspect-ratio: auto !important;
-                padding: 0 !important;
-                margin: 0 auto !important;
-                /* 尺寸由 @page 控制 */;
-            }
-            .card .deco {
-                opacity: 0.04;
-            }
-            .card-content {
-                padding: 5% 6%;
-            }
-            /* 卡片尺寸由 JS 在打印前动态设置 inline style */
-        }
-
-        /* ===== 加载提示 ===== */
-        .loading-tip {
-            font-size: 13px;
-            color: #aaa;
-            text-align: center;
-            padding: 12px;
-        }
-
-        /* ===== 导出图片时的临时样式 ===== */
-        .exporting .card {
-            transform: none !important;
-            transition: none !important;
-        }
-
-        /* ===== 小工具 ===== */
-        .mt-1 {
-            margin-top: 6px;
-        }
-        .text-muted {
-            color: #999;
-            font-size: 12px;
-        }
-        .flex-center {
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            body { background: #fff; padding: 0; }
+            .app-container, .app-header, .control-panel, .preview-label { display: none !important; }
+            .preview-panel { background: #fff !important; padding: 0 !important; }
+            .card, .sheet { box-shadow: none !important; border-radius: 0 !important; max-width: 100% !important; }
         }
     </style>
 </head>
 <body>
-
-    <div class="app-container" id="app">
-        <!-- 头部 -->
+    <div class="app-container">
         <header class="app-header">
-            <h1>
-                🏷️ 挂牌底卡生成器
-                <small>在线 · 即编即览</small>
-            </h1>
-            <span class="header-hint">📐 支持 A3 / A4 / A5 · 多色卡</span>
+            <h1>🏷️ 挂牌底卡生成器<small>A1–A8 · 拼版 · 存照片</small></h1>
+            <span class="header-hint">📐 单卡 / 一版多卡 · 随意组合</span>
         </header>
 
-        <!-- 主体 -->
         <div class="main-layout">
-
-            <!-- ===== 左侧控制面板 ===== -->
+            <!-- ===== 左侧控制 ===== -->
             <div class="control-panel">
-
-                <!-- 尺寸 -->
+                <!-- 模式 -->
                 <div class="control-group">
-                    <label>📏 卡片尺寸</label>
-                    <div class="size-options" id="sizeOptions">
-                        <button class="size-btn" data-size="a3">
-                            A3
-                            <span class="sub">297×420mm</span>
-                        </button>
-                        <button class="size-btn active" data-size="a4">
-                            A4
-                            <span class="sub">210×297mm</span>
-                        </button>
-                        <button class="size-btn" data-size="a5">
-                            A5
-                            <span class="sub">148×210mm</span>
-                        </button>
+                    <label>🪄 模式</label>
+                    <div class="mode-tabs" id="modeTabs">
+                        <button class="mode-tab active" data-mode="single">单卡</button>
+                        <button class="mode-tab" data-mode="sheet">拼版（一版多卡）</button>
                     </div>
+                </div>
+
+                <!-- 尺寸（单卡） -->
+                <div class="control-group" id="sizeGroup">
+                    <label>📏 卡片尺寸 <span class="unit">（A1–A8）</span></label>
+                    <div class="size-grid" id="sizeGrid"></div>
+                </div>
+
+                <!-- 纸张（拼版） -->
+                <div class="control-group" id="sheetSizeGroup" style="display:none;">
+                    <label>📄 纸张尺寸 <span class="unit">（排布底纸）</span></label>
+                    <div class="size-grid" id="sheetSizeGrid"></div>
                 </div>
 
                 <!-- 色卡 -->
                 <div class="control-group">
-                    <label>🎨 色卡 <span class="unit">（点击选择）</span></label>
-                    <div class="color-grid" id="colorGrid">
-                        <!-- 由 JS 动态渲染 -->
-                    </div>
+                    <label>🎨 色卡 <span class="unit">（正方格横排）</span></label>
+                    <div class="color-row" id="colorRow"></div>
                     <div class="custom-color-row">
                         <input type="color" id="customColor" value="#2d3436" />
                         <span>自定义颜色</span>
@@ -711,70 +189,55 @@
                 <!-- 字体颜色 -->
                 <div class="control-group">
                     <label>🖋️ 字体颜色</label>
-                    <div class="input-group">
-                        <div class="input-row">
-                            <label>颜色</label>
-                            <input type="color" id="fontColor" value="#ffffff" />
-                            <label style="display:flex;align-items:center;gap:6px;min-width:auto;margin-bottom:0;font-weight:500;font-size:13px;color:#555;cursor:pointer;">
-                                <input type="checkbox" id="autoFontColor" checked /> 自动
-                            </label>
-                        </div>
-                        <div class="text-muted" style="margin-top:2px;">勾选“自动”按背景明暗自动配字色；取消后可手动选字色。</div>
+                    <div class="input-row">
+                        <label>颜色</label>
+                        <input type="color" id="fontColor" value="#ffffff" />
+                        <label class="auto-font"><input type="checkbox" id="autoFontColor" checked /> 自动</label>
                     </div>
+                    <div class="hint-line" style="text-align:left; margin-top:6px;">勾选“自动”按背景明暗配字色；取消后可手动选。</div>
                 </div>
 
-                <!-- 内容编辑 -->
-                <div class="control-group">
+                <!-- 内容（单卡） -->
+                <div class="control-group" id="contentGroup">
                     <label>✏️ 卡片内容</label>
                     <div class="input-group">
-                        <div class="input-row">
-                            <label>班级</label>
-                            <input type="text" id="inputClass" value="一1班" placeholder="如：一1班" />
-                        </div>
-                        <div class="input-row">
-                            <label>姓名</label>
-                            <input type="text" id="inputName" value="张三" placeholder="如：张三" />
-                        </div>
-                        <div class="input-row">
-                            <label>标语</label>
-                            <input type="text" id="inputSlogan" value="文明礼仪" placeholder="如：文明礼仪" />
-                        </div>
-                        <div class="input-row">
-                            <label>机构</label>
-                            <input type="text" id="inputOrg" value="广州市番禺区市桥富..." placeholder="机构名称" />
-                        </div>
+                        <div class="input-row"><label>班级</label><input type="text" id="inputClass" value="一1班" /></div>
+                        <div class="input-row"><label>姓名</label><input type="text" id="inputName" value="张三" /></div>
+                        <div class="input-row"><label>标语</label><input type="text" id="inputSlogan" value="文明礼仪" /></div>
+                        <div class="input-row"><label>机构</label><input type="text" id="inputOrg" value="广州市番禺区市桥富..." /></div>
                     </div>
                 </div>
 
-                <!-- 操作按钮 -->
-                <div class="control-group" style="border: none; background: transparent; padding: 0;">
+                <!-- 拼版卡片列表 -->
+                <div class="control-group" id="cardListGroup" style="display:none;">
+                    <label>🃏 卡片列表 <span class="unit">（可自由增删、改尺寸/颜色）</span></label>
+                    <div class="card-list" id="cardList"></div>
+                    <button class="add-card-btn" id="addCardBtn">＋ 添加一张卡片</button>
+                </div>
+
+                <!-- 操作 -->
+                <div class="control-group" style="background: transparent; padding: 0;">
                     <div class="action-buttons">
-                        <button class="action-btn primary" id="printBtn">
-                            <span class="icon">🖨️</span> 打印
-                        </button>
-                        <button class="action-btn success" id="exportBtn">
-                            <span class="icon">⬇️</span> 导出 PNG
-                        </button>
+                        <button class="action-btn primary" id="printBtn">🖨️ 打印</button>
+                        <button class="action-btn success" id="exportBtn">⬇️ 存照片</button>
                     </div>
-                    <div style="margin-top: 10px; font-size: 12px; color: #bbb; text-align: center;">
-                        💡 打印时自动按所选尺寸输出
-                    </div>
+                    <div class="hint-line">💡 导出为高清 PNG 照片</div>
                 </div>
             </div>
 
             <!-- ===== 右侧预览 ===== -->
             <div class="preview-panel" id="previewPanel">
-                <div class="preview-label">📋 实时预览</div>
-                <div class="card-preview-wrapper">
+                <div class="preview-label" id="previewLabel">📋 单卡预览</div>
+                <div class="stage" id="stage">
                     <div class="card" id="cardPreview">
-                        <!-- 装饰 -->
+                        <span class="corner corner-tl"></span>
+                        <span class="corner corner-br"></span>
                         <div class="deco deco-1"></div>
                         <div class="deco deco-2"></div>
-                        <!-- 内容 -->
                         <div class="card-content">
-                            <div class="card-center">
-                                <div class="card-class" id="previewClass">一1班</div>
-                                <div class="card-name" id="previewName">张三</div>
+                            <div class="card-mid">
+                                <span class="card-class" id="previewClass">一1班</span>
+                                <span class="card-name" id="previewName">张三</span>
                             </div>
                             <div class="card-bottom">
                                 <div class="card-slogan" id="previewSlogan">文明礼仪</div>
@@ -782,425 +245,311 @@
                             </div>
                         </div>
                     </div>
+                    <div class="sheet" id="sheetPreview" style="display:none;"></div>
                 </div>
             </div>
-
-        </div><!-- /main-layout -->
-    </div><!-- /app-container -->
+        </div>
+    </div>
 
     <script>
-        (function() {
-            'use strict';
+    (function () {
+        'use strict';
 
-            // ============================================================
-            //  1. 数据
-            // ============================================================
-            const PRESET_COLORS = [
-                '#E74C3C', // 红
-                '#E67E22', // 橙
-                '#F1C40F', // 黄
-                '#2ECC71', // 绿
-                '#1ABC9C', // 青
-                '#3498DB', // 蓝
-                '#5B6ABF', // 靛蓝
-                '#9B59B6', // 紫
-                '#E91E8C', // 粉
-                '#2C3E50', // 深蓝
-                '#7F8C8D', // 灰
-                '#34495E', // 深灰
-            ];
+        // ===== 尺寸数据（A1–A8，宽高 mm，纵横比均为 1/√2）=====
+        const SIZES = [
+            { key: 'a1', label: 'A1', w: 594, h: 841 },
+            { key: 'a2', label: 'A2', w: 420, h: 594 },
+            { key: 'a3', label: 'A3', w: 297, h: 420 },
+            { key: 'a4', label: 'A4', w: 210, h: 297 },
+            { key: 'a5', label: 'A5', w: 148, h: 210 },
+            { key: 'a6', label: 'A6', w: 105, h: 148 },
+            { key: 'a7', label: 'A7', w: 74, h: 105 },
+            { key: 'a8', label: 'A8', w: 52, h: 74 },
+        ];
+        const SHEET_SIZES = ['a3', 'a4', 'a5'];
+        const ASPECT = 1 / Math.SQRT2;
+        const sizeOf = (k) => SIZES.find(s => s.key === k);
 
-            const SIZE_MAP = {
-                a3: { label: 'A3', width: 297, height: 420, aspect: 297 / 420 },
-                a4: { label: 'A4', width: 210, height: 297, aspect: 210 / 297 },
-                a5: { label: 'A5', width: 148, height: 210, aspect: 148 / 210 },
-            };
+        const PRESET_COLORS = [
+            '#E74C3C', '#E67E22', '#F1C40F', '#2ECC71', '#1ABC9C', '#3498DB',
+            '#5B6ABF', '#9B59B6', '#E91E8C', '#2C3E50', '#7F8C8D', '#34495E',
+        ];
 
-            // ============================================================
-            //  2. DOM 引用
-            // ============================================================
-            const cardEl = document.getElementById('cardPreview');
-            const previewClass = document.getElementById('previewClass');
-            const previewName = document.getElementById('previewName');
-            const previewSlogan = document.getElementById('previewSlogan');
-            const previewOrg = document.getElementById('previewOrg');
+        // ===== DOM =====
+        const $ = (id) => document.getElementById(id);
+        const cardEl = $('cardPreview');
+        const sheetEl = $('sheetPreview');
+        const previewLabel = $('previewLabel');
+        const colorRow = $('colorRow');
+        const sizeGrid = $('sizeGrid');
+        const sheetSizeGrid = $('sheetSizeGrid');
+        const cardList = $('cardList');
 
-            const inputClass = document.getElementById('inputClass');
-            const inputName = document.getElementById('inputName');
-            const inputSlogan = document.getElementById('inputSlogan');
-            const inputOrg = document.getElementById('inputOrg');
+        // ===== 状态 =====
+        let mode = 'single';
+        let currentSize = 'a4';
+        let sheetSize = 'a4';
+        let currentColor = '#2d3436';
+        let cards = [];
+        let uid = 1;
 
-            const sizeOptions = document.getElementById('sizeOptions');
-            const colorGrid = document.getElementById('colorGrid');
-            const customColorInput = document.getElementById('customColor');
-            const fontColorInput = document.getElementById('fontColor');
-            const autoFontColor = document.getElementById('autoFontColor');
+        // ===== 工具 =====
+        function hexToRgb(hex) {
+            const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return m ? { r: parseInt(m[1], 16), g: parseInt(m[2], 16), b: parseInt(m[3], 16) } : null;
+        }
+        function hexWithAlpha(hex, a) {
+            const rgb = hexToRgb(hex);
+            return rgb ? `rgba(${rgb.r},${rgb.g},${rgb.b},${a})` : `rgba(0,0,0,${a})`;
+        }
+        function brightnessOf(hex) {
+            const rgb = hexToRgb(hex);
+            return rgb ? (rgb.r * 299 + rgb.g * 587 + rgb.b * 114) / 1000 : 255;
+        }
 
-            const printBtn = document.getElementById('printBtn');
-            const exportBtn = document.getElementById('exportBtn');
-
-            // ============================================================
-            //  3. 状态
-            // ============================================================
-            let currentSize = 'a4';
-            let currentColor = '#2d3436'; // 默认深色
-
-            // ============================================================
-            //  4. 渲染色卡
-            // ============================================================
-            function renderColorSwatches() {
-                colorGrid.innerHTML = '';
-                PRESET_COLORS.forEach((hex) => {
-                    const swatch = document.createElement('div');
-                    swatch.className = 'color-swatch' + (hex === currentColor ? ' active' : '');
-                    swatch.style.backgroundColor = hex;
-                    // 对浅色加边框以便看清
-                    const isLight = isLightColor(hex);
-                    if (isLight) {
-                        swatch.style.borderColor = '#d0d0d0';
-                    }
-                    swatch.dataset.color = hex;
-                    swatch.innerHTML = `<span class="check-mark">✓</span>`;
-                    swatch.addEventListener('click', () => {
-                        selectColor(hex);
-                    });
-                    colorGrid.appendChild(swatch);
-                });
-                // 高亮自定义颜色如果匹配
-                highlightCustomIfMatch();
+        // ===== 文字色 =====
+        function resolveTextColor(bgHex) {
+            if ($('autoFontColor').checked) {
+                return brightnessOf(bgHex) > 180 ? '#1a1a2e' : '#ffffff';
             }
+            return $('fontColor').value || '#1a1a2e';
+        }
 
-            function isLightColor(hex) {
-                const rgb = hexToRgb(hex);
-                if (!rgb) return false;
-                const brightness = (rgb.r * 299 + rgb.g * 587 + rgb.b * 114) / 1000;
-                return brightness > 200;
-            }
+        // ===== 卡片模板（用于拼版）=====
+        function cardInnerHTML(c) {
+            const tc = resolveTextColor(c.color);
+            return `<span class="corner corner-tl"></span><span class="corner corner-br"></span>` +
+                `<div class="deco deco-1"></div><div class="deco deco-2"></div>` +
+                `<div class="card-content">` +
+                `<div class="card-mid"><span class="card-class">${esc(c.cls || '班级')}</span><span class="card-name">${esc(c.name || '姓名')}</span></div>` +
+                `<div class="card-bottom"><div class="card-slogan">${esc(c.slogan || '标语')}</div><div class="card-org">${esc(c.org || '')}</div></div>` +
+                `</div>`;
+        }
+        function esc(s) {
+            return String(s).replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+        }
 
-            function hexToRgb(hex) {
-                const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-                return result ? {
-                    r: parseInt(result[1], 16),
-                    g: parseInt(result[2], 16),
-                    b: parseInt(result[3], 16)
-                } : null;
-            }
+        // ===== 渲染单卡 =====
+        function applyColor(hex) {
+            currentColor = hex;
+            const tc = resolveTextColor(hex);
+            cardEl.style.backgroundColor = hex;
+            cardEl.style.color = tc;
+            $('previewClass').style.color = tc;
+            $('previewName').style.color = tc;
+            $('previewSlogan').style.color = tc;
+            $('previewOrg').style.color = $('autoFontColor').checked
+                ? (brightnessOf(hex) > 180 ? 'rgba(0,0,0,.55)' : 'rgba(255,255,255,.7)')
+                : hexWithAlpha(tc, .7);
+        }
+        function updateSingleContent() {
+            $('previewClass').textContent = $('inputClass').value || '班级';
+            $('previewName').textContent = $('inputName').value || '姓名';
+            $('previewSlogan').textContent = $('inputSlogan').value || '标语';
+            $('previewOrg').textContent = $('inputOrg').value || '机构名称';
+        }
 
-            function selectColor(hex) {
-                currentColor = hex;
-                // 更新色卡 active
-                document.querySelectorAll('.color-swatch').forEach(el => {
-                    el.classList.toggle('active', el.dataset.color === hex);
-                });
-                // 同步自定义颜色选择器
-                customColorInput.value = hex;
-                highlightCustomIfMatch();
-                applyCardColor(hex);
-            }
-
-            function highlightCustomIfMatch() {
-                // 如果当前颜色不在预设中，高亮自定义
-                const isPreset = PRESET_COLORS.includes(currentColor);
-                if (!isPreset) {
-                    // 取消所有预设高亮
-                    document.querySelectorAll('.color-swatch').forEach(el => el.classList.remove('active'));
-                }
-            }
-
-            // 自定义颜色选择
-            customColorInput.addEventListener('input', (e) => {
-                const val = e.target.value;
-                if (val) {
-                    // 取消所有预设高亮
-                    document.querySelectorAll('.color-swatch').forEach(el => el.classList.remove('active'));
-                    currentColor = val;
-                    applyCardColor(val);
-                }
+        // ===== 渲染色卡 =====
+        function renderColors() {
+            colorRow.innerHTML = '';
+            PRESET_COLORS.forEach((hex) => {
+                const d = document.createElement('div');
+                d.className = 'color-swatch' + (hex === currentColor && mode === 'single' ? ' active' : '');
+                d.style.backgroundColor = hex;
+                d.innerHTML = '<span class="ck">✓</span>';
+                d.onclick = () => { selectColor(hex); };
+                colorRow.appendChild(d);
             });
+        }
+        function selectColor(hex) {
+            currentColor = hex;
+            $('customColor').value = hex;
+            renderColors();
+            if (mode === 'single') applyColor(hex);
+        }
 
-            // 字体颜色：自动 / 手动
-            autoFontColor.addEventListener('change', () => {
-                fontColorInput.disabled = autoFontColor.checked;
-                applyCardColor(currentColor);
+        // ===== 渲染尺寸 =====
+        function renderSizes() {
+            sizeGrid.innerHTML = '';
+            SIZES.forEach((s) => {
+                const b = document.createElement('button');
+                b.className = 'size-btn' + (s.key === currentSize ? ' active' : '');
+                b.textContent = s.label;
+                b.onclick = () => { currentSize = s.key; renderSizes(); };
+                sizeGrid.appendChild(b);
             });
-            fontColorInput.addEventListener('input', (e) => {
-                if (e.target.value && !autoFontColor.checked) {
-                    applyCardColor(currentColor);
-                }
+            sheetSizeGrid.innerHTML = '';
+            SHEET_SIZES.forEach((k) => {
+                const s = sizeOf(k);
+                const b = document.createElement('button');
+                b.className = 'size-btn' + (k === sheetSize ? ' active' : '');
+                b.textContent = s.label;
+                b.onclick = () => { sheetSize = k; renderSizes(); renderSheet(); };
+                sheetSizeGrid.appendChild(b);
             });
+        }
 
-            // ============================================================
-            //  5. 应用卡片颜色
-            // ============================================================
-            function hexWithAlpha(hex, alpha) {
-                const rgb = hexToRgb(hex);
-                if (!rgb) return 'rgba(0,0,0,' + alpha + ')';
-                return 'rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ',' + alpha + ')';
-            }
-
-            function applyCardColor(hex) {
-                // 设置卡片背景色
-                cardEl.style.backgroundColor = hex;
-                const rgb = hexToRgb(hex);
-                const brightness = rgb ? (rgb.r * 299 + rgb.g * 587 + rgb.b * 114) / 1000 : 255;
-                // 文字颜色：自动（按背景明暗）或手动
-                const useAuto = autoFontColor.checked;
-                const autoText = brightness > 180 ? '#1a1a2e' : '#ffffff';
-                const textColor = useAuto ? autoText : (fontColorInput.value || autoText);
-                // 机构文字：自动用半透明，手动用同色的低透明
-                const orgColor = useAuto
-                    ? (brightness > 180 ? 'rgba(0,0,0,0.55)' : 'rgba(255,255,255,0.70)')
-                    : hexWithAlpha(textColor, 0.65);
-                const borderColor = useAuto
-                    ? (brightness > 180 ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.15)')
-                    : hexWithAlpha(textColor, 0.15);
-
-                cardEl.style.color = textColor;
-                cardEl.style.setProperty('--deco-color', textColor);
-
-                const els = [previewClass, previewName, previewSlogan];
-                els.forEach(el => el.style.color = textColor);
-                previewOrg.style.color = orgColor;
-
-                const bottom = cardEl.querySelector('.card-bottom');
-                if (bottom) {
-                    bottom.style.borderTopColor = borderColor;
-                }
-
-                // 更新装饰颜色（用文字色做低透明度装饰）
-                const decos = cardEl.querySelectorAll('.deco');
-                decos.forEach(d => d.style.color = textColor);
-            }
-
-            // ============================================================
-            //  6. 尺寸切换
-            // ============================================================
-            function setSize(sizeKey) {
-                currentSize = sizeKey;
-                // 更新按钮状态
-                document.querySelectorAll('.size-btn').forEach(btn => {
-                    btn.classList.toggle('active', btn.dataset.size === sizeKey);
-                });
-                // 更新卡片宽高比
-                const info = SIZE_MAP[sizeKey];
-                if (info) {
-                    cardEl.style.aspectRatio = info.aspect;
-                }
-                // 预览时最大宽度自适应，但保持比例
-                // 另外，为了视觉舒适，根据尺寸调整内边距
-                const paddingMap = {
-                    a3: '40px 36px',
-                    a4: '32px 28px',
-                    a5: '24px 20px',
-                };
-                cardEl.style.padding = paddingMap[sizeKey] || '32px 28px';
-
-                // 字体大小微调
-                const fontSizeMap = {
-                    a3: { class: 34, name: 72, slogan: 24, org: 16 },
-                    a4: { class: 26, name: 56, slogan: 20, org: 14 },
-                    a5: { class: 20, name: 42, slogan: 16, org: 12 },
-                };
-                const sizes = fontSizeMap[sizeKey] || fontSizeMap.a4;
-                previewClass.style.fontSize = sizes.class + 'px';
-                previewName.style.fontSize = sizes.name + 'px';
-                previewSlogan.style.fontSize = sizes.slogan + 'px';
-                previewOrg.style.fontSize = sizes.org + 'px';
-            }
-
-            // ============================================================
-            //  7. 更新内容
-            // ============================================================
-            function updateContent() {
-                previewClass.textContent = inputClass.value || '班级';
-                previewName.textContent = inputName.value || '姓名';
-                previewSlogan.textContent = inputSlogan.value || '标语';
-                previewOrg.textContent = inputOrg.value || '机构名称';
-            }
-
-            // 输入事件绑定
-            [inputClass, inputName, inputSlogan, inputOrg].forEach(el => {
-                el.addEventListener('input', updateContent);
+        // ===== 拼版：卡片列表 =====
+        function newCard() {
+            return { id: uid++, cls: '一1班', name: '同学' + uid, slogan: '文明礼仪', org: '', color: PRESET_COLORS[uid % PRESET_COLORS.length], size: 'a6' };
+        }
+        function renderCardList() {
+            cardList.innerHTML = '';
+            cards.forEach((c, idx) => {
+                const item = document.createElement('div');
+                item.className = 'list-item';
+                item.innerHTML =
+                    `<div class="li-top">` +
+                    `<input class="li-name" placeholder="姓名" value="${esc(c.name)}">` +
+                    `<input class="li-cls" placeholder="班级" value="${esc(c.cls)}">` +
+                    `<select class="li-size">${SIZES.filter(s => ['a5','a6','a7','a8'].includes(s.key)).map(s => `<option value="${s.key}" ${s.key===c.size?'selected':''}>${s.label}</option>`).join('')}</select>` +
+                    `<input type="color" class="li-color" value="${c.color}">` +
+                    `<button class="li-del" title="删除">✕</button></div>` +
+                    `<div class="li-bot">` +
+                    `<input class="li-slogan" placeholder="标语" value="${esc(c.slogan)}">` +
+                    `<input class="li-org" placeholder="机构" value="${esc(c.org)}">` +
+                    `</div>`;
+                item.querySelector('.li-name').oninput = (e) => { c.name = e.target.value; renderSheet(); };
+                item.querySelector('.li-cls').oninput = (e) => { c.cls = e.target.value; renderSheet(); };
+                item.querySelector('.li-size').onchange = (e) => { c.size = e.target.value; renderSheet(); };
+                item.querySelector('.li-color').oninput = (e) => { c.color = e.target.value; renderSheet(); };
+                item.querySelector('.li-slogan').oninput = (e) => { c.slogan = e.target.value; renderSheet(); };
+                item.querySelector('.li-org').oninput = (e) => { c.org = e.target.value; renderSheet(); };
+                item.querySelector('.li-del').onclick = () => { cards.splice(idx, 1); renderCardList(); renderSheet(); };
+                cardList.appendChild(item);
             });
+        }
 
-            // ============================================================
-            //  8. 尺寸按钮事件
-            // ============================================================
-            sizeOptions.addEventListener('click', (e) => {
-                const btn = e.target.closest('.size-btn');
-                if (!btn) return;
-                const size = btn.dataset.size;
-                if (size && size !== currentSize) {
-                    setSize(size);
-                }
+        // ===== 拼版：布局 + 渲染 =====
+        function layoutCards() {
+            const sheet = sizeOf(sheetSize);
+            const margin = 5; // mm
+            const maxW = sheet.w - margin * 2, maxH = sheet.h - margin * 2;
+            let x = margin, y = margin, rowH = 0;
+            const placed = [];
+            cards.forEach((c) => {
+                const s = sizeOf(c.size);
+                let w = s.w, h = s.h;
+                const sc = Math.min(1, maxW / w, maxH / h);
+                w *= sc; h *= sc;
+                if (x + w > sheet.w - margin + 0.01) { x = margin; y += rowH + margin; rowH = 0; }
+                placed.push({ c, x, y, w, h });
+                x += w + margin;
+                rowH = Math.max(rowH, h);
             });
-
-            // ============================================================
-            //  9. 打印
-            // ============================================================
-            function printCard() {
-                // 在打印前，把卡片尺寸精确设置为所选尺寸
-                const info = SIZE_MAP[currentSize];
-                if (!info) return;
-
-                // 临时修改卡片样式以适应打印
-                const originalPadding = cardEl.style.padding;
-                const originalAspect = cardEl.style.aspectRatio;
-                const originalMaxWidth = cardEl.style.maxWidth;
-                const originalWidth = cardEl.style.width;
-
-                // 设置精确尺寸 (mm)
-                cardEl.style.width = info.width + 'mm';
-                cardEl.style.height = info.height + 'mm';
-                cardEl.style.aspectRatio = 'auto';
-                cardEl.style.maxWidth = '100%';
-                cardEl.style.margin = '0 auto';
-
-                // 强制重绘
-                void cardEl.offsetHeight;
-
-                // 执行打印
-                window.print();
-
-                // 恢复样式 (延迟恢复，让打印完成)
-                setTimeout(() => {
-                    cardEl.style.padding = originalPadding;
-                    cardEl.style.aspectRatio = originalAspect || (info.width / info.height);
-                    cardEl.style.maxWidth = originalMaxWidth || '420px';
-                    cardEl.style.width = originalWidth || '100%';
-                    cardEl.style.height = 'auto';
-                }, 500);
+            return placed;
+        }
+        function renderSheet() {
+            sheetEl.innerHTML = '';
+            if (!cards.length) {
+                sheetEl.innerHTML = '<div class="empty-hint">还没有卡片，点左侧“＋ 添加一张卡片”</div>';
+                return;
             }
-
-            printBtn.addEventListener('click', printCard);
-
-            // ============================================================
-            //  10. 导出 PNG
-            // ============================================================
-            async function exportPNG() {
-                // 临时将卡片调整到合适大小以便截图
-                const info = SIZE_MAP[currentSize];
-                if (!info) return;
-
-                // 为了导出清晰，按比例放大
-                const scale = 3; // 3x 清晰度
-                const w = info.width * scale;
-                const h = info.height * scale;
-
-                // 保存当前样式
-                const origPadding = cardEl.style.padding;
-                const origAspect = cardEl.style.aspectRatio;
-                const origMaxWidth = cardEl.style.maxWidth;
-                const origWidth = cardEl.style.width;
-                const origHeight = cardEl.style.height;
-                const origBg = cardEl.style.backgroundColor;
-
-                // 设置导出尺寸
-                cardEl.style.width = w + 'px';
-                cardEl.style.height = h + 'px';
-                cardEl.style.aspectRatio = 'auto';
-                cardEl.style.maxWidth = 'none';
-                cardEl.style.padding = getPaddingForSize(currentSize, scale);
-
-                // 强制重绘
-                void cardEl.offsetHeight;
-
-                try {
-                    const canvas = await html2canvas(cardEl, {
-                        scale: 1,
-                        useCORS: true,
-                        backgroundColor: cardEl.style.backgroundColor || '#ffffff',
-                        logging: false,
-                        width: w,
-                        height: h,
-                    });
-
-                    // 下载
-                    const link = document.createElement('a');
-                    link.download = `挂牌底卡_${currentSize.toUpperCase()}_${inputClass.value || '班级'}_${inputName.value || '姓名'}.png`;
-                    link.href = canvas.toDataURL('image/png');
-                    link.click();
-
-                } catch (err) {
-                    console.error('导出失败:', err);
-                    alert('导出图片失败，请重试或使用打印功能。');
-                } finally {
-                    // 恢复样式
-                    cardEl.style.padding = origPadding;
-                    cardEl.style.aspectRatio = origAspect || (info.width / info.height);
-                    cardEl.style.maxWidth = origMaxWidth || '420px';
-                    cardEl.style.width = origWidth || '100%';
-                    cardEl.style.height = origHeight || 'auto';
-                    cardEl.style.backgroundColor = origBg;
-                    void cardEl.offsetHeight;
-                }
-            }
-
-            function getPaddingForSize(sizeKey, scale) {
-                const base = {
-                    a3: '40px 36px',
-                    a4: '32px 28px',
-                    a5: '24px 20px',
-                };
-                const p = base[sizeKey] || base.a4;
-                // 按比例放大 padding
-                const parts = p.split(' ');
-                const top = parseFloat(parts[0]) * scale;
-                const right = parseFloat(parts[1] || parts[0]) * scale;
-                const bottom = parts.length > 2 ? parseFloat(parts[2]) * scale : top;
-                const left = parts.length > 3 ? parseFloat(parts[3]) * scale : (parts.length > 1 ? right : top);
-                return `${top}px ${right}px ${bottom}px ${left}px`;
-            }
-
-            exportBtn.addEventListener('click', exportPNG);
-
-            // ============================================================
-            //  11. 键盘快捷键 (Ctrl+P 打印)
-            // ============================================================
-            document.addEventListener('keydown', (e) => {
-                if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
-                    // 如果焦点在输入框中，不拦截
-                    const tag = e.target.tagName;
-                    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
-                    e.preventDefault();
-                    printCard();
-                }
+            const sheet = sizeOf(sheetSize);
+            const placed = layoutCards();
+            placed.forEach(({ c, x, y, w, h }) => {
+                const d = document.createElement('div');
+                d.className = 'sheet-card';
+                d.style.left = (x / sheet.w * 100) + '%';
+                d.style.top = (y / sheet.h * 100) + '%';
+                d.style.width = (w / sheet.w * 100) + '%';
+                d.style.height = (h / sheet.h * 100) + '%';
+                d.style.backgroundColor = c.color;
+                d.style.color = resolveTextColor(c.color);
+                d.innerHTML = cardInnerHTML(c);
+                // 字号随尺寸缩放
+                const nameSize = Math.max(9, Math.round(h / sheet.h * 46));
+                const classSize = Math.max(8, Math.round(nameSize * 0.45));
+                const sloganSize = Math.max(7, Math.round(nameSize * 0.42));
+                d.querySelector('.card-name').style.fontSize = nameSize + 'px';
+                d.querySelector('.card-class').style.fontSize = classSize + 'px';
+                d.querySelector('.card-slogan').style.fontSize = sloganSize + 'px';
+                d.querySelector('.card-org').style.fontSize = Math.max(6, sloganSize * 0.6) + 'px';
+                sheetEl.appendChild(d);
             });
+        }
 
-            // ============================================================
-            //  12. 初始化
-            // ============================================================
-            function init() {
-                // 渲染色卡
-                renderColorSwatches();
-                // 默认选中颜色
-                selectColor(currentColor);
-                // 设置默认尺寸 A4
-                setSize('a4');
-                // 更新内容
-                updateContent();
-                // 字体颜色初始状态（默认自动）
-                fontColorInput.disabled = autoFontColor.checked;
-                // 应用颜色
-                applyCardColor(currentColor);
+        // ===== 模式切换 =====
+        function setMode(m) {
+            mode = m;
+            document.querySelectorAll('.mode-tab').forEach(t => t.classList.toggle('active', t.dataset.mode === m));
+            $('sizeGroup').style.display = m === 'single' ? '' : 'none';
+            $('contentGroup').style.display = m === 'single' ? '' : 'none';
+            $('sheetSizeGroup').style.display = m === 'sheet' ? '' : 'none';
+            $('cardListGroup').style.display = m === 'sheet' ? '' : 'none';
+            $('cardPreview').style.display = m === 'single' ? '' : 'none';
+            $('sheetPreview').style.display = m === 'sheet' ? '' : 'none';
+            previewLabel.textContent = m === 'single' ? '📋 单卡预览' : '📋 拼版预览（一版多卡）';
+            renderColors();
+            if (m === 'single') applyColor(currentColor);
+            else renderSheet();
+        }
+
+        // ===== 打印 =====
+        function printTarget() {
+            const target = mode === 'single' ? cardEl : sheetEl;
+            const info = sizeOf(mode === 'single' ? currentSize : sheetSize);
+            const orig = { w: target.style.width, h: target.style.height, aspect: target.style.aspectRatio, maxW: target.style.maxWidth };
+            target.style.width = info.w + 'mm';
+            target.style.height = info.h + 'mm';
+            target.style.aspectRatio = 'auto';
+            target.style.maxWidth = '100%';
+            void target.offsetHeight;
+            window.print();
+            setTimeout(() => {
+                target.style.width = orig.w; target.style.height = orig.h;
+                target.style.aspectRatio = orig.aspect || String(ASPECT); target.style.maxWidth = orig.maxW;
+            }, 400);
+        }
+
+        // ===== 导出照片 =====
+        async function exportPNG() {
+            const target = mode === 'single' ? cardEl : sheetEl;
+            try {
+                const canvas = await html2canvas(target, { scale: 4, useCORS: true, backgroundColor: mode === 'single' ? (cardEl.style.backgroundColor || '#fff') : '#ffffff', logging: false });
+                const a = document.createElement('a');
+                a.download = mode === 'single'
+                    ? `挂牌底卡_${currentSize.toUpperCase()}_${$('inputName').value || '姓名'}.png`
+                    : `挂牌底卡_拼版_${sheetSize.toUpperCase()}_${cards.length}张.png`;
+                a.href = canvas.toDataURL('image/png');
+                a.click();
+            } catch (e) {
+                alert('导出失败，请重试。');
             }
+        }
 
-            init();
+        // ===== 事件 =====
+        $('modeTabs').addEventListener('click', (e) => {
+            const t = e.target.closest('.mode-tab');
+            if (t) setMode(t.dataset.mode);
+        });
+        $('customColor').addEventListener('input', (e) => { selectColor(e.target.value); });
+        $('autoFontColor').addEventListener('change', () => {
+            $('fontColor').disabled = $('autoFontColor').checked;
+            if (mode === 'single') applyColor(currentColor); else renderSheet();
+        });
+        $('fontColor').addEventListener('input', () => {
+            if (!$('autoFontColor').checked) { if (mode === 'single') applyColor(currentColor); else renderSheet(); }
+        });
+        ['inputClass', 'inputName', 'inputSlogan', 'inputOrg'].forEach(id => $(id).addEventListener('input', updateSingleContent));
+        $('addCardBtn').addEventListener('click', () => { cards.push(newCard()); renderCardList(); renderSheet(); });
+        $('printBtn').addEventListener('click', printTarget);
+        $('exportBtn').addEventListener('click', exportPNG);
 
-            // 暴露一些方法以便调试
-            window.__cardGen = {
-                setSize,
-                selectColor,
-                updateContent,
-                printCard,
-                exportPNG,
-            };
-
-            console.log('🏷️ 挂牌底卡生成器已启动！');
-            console.log('💡 使用 Ctrl+P 快速打印');
-
-        })();
+        // ===== 初始化 =====
+        function init() {
+            $('fontColor').disabled = true;
+            renderColors();
+            renderSizes();
+            updateSingleContent();
+            applyColor(currentColor);
+            if (cards.length === 0) { cards.push(newCard()); cards.push(newCard()); }
+            renderCardList();
+            setMode('single');
+        }
+        init();
+        window.__cardGen = { setMode, exportPNG, printTarget };
+    })();
     </script>
-
 </body>
 </html>
