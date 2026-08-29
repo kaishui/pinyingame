@@ -52,6 +52,8 @@ body{font-family:'PingFang SC','Microsoft YaHei','Helvetica Neue',Arial,sans-ser
 /* 打印纸参考（底部） */
 .paper{position:relative;background:#fff;box-shadow:0 8px 30px rgba(0,0,0,.14);border-radius:6px;width:100%;max-width:440px}
 .paper .paper-tag{position:absolute;bottom:4px;right:8px;font-size:11px;color:#b9bec7;pointer-events:none}
+.paper.exporting{box-shadow:none!important;border-radius:0!important}
+.paper.exporting .paper-tag{display:none!important}
 
 /* 卡片（色卡） */
 .card{position:absolute;overflow:visible;border-radius:8px;box-shadow:0 6px 22px rgba(0,0,0,.22);transform-origin:center center;cursor:default}
@@ -417,6 +419,7 @@ body{font-family:'PingFang SC','Microsoft YaHei','Helvetica Neue',Arial,sans-ser
   }
   async function exportPNG(){
     const target = $('stage').firstChild;
+    if (mode==='single') target.classList.add('exporting');
     if (mode==='sheet') target.classList.add('no-cuts');
     try {
       const canvas = await html2canvas(target, { scale:4, useCORS:true, backgroundColor:'#ffffff', logging:false });
@@ -424,7 +427,10 @@ body{font-family:'PingFang SC','Microsoft YaHei','Helvetica Neue',Arial,sans-ser
       a.download = mode==='single' ? `挂牌底卡_${currentCardSize().label}_${textVal('name')}.png` : `挂牌底卡_拼卡_${cards.length}张.png`;
       a.href = canvas.toDataURL('image/png'); a.click();
     } catch(e){ alert('导出失败'); }
-    finally { if (mode==='sheet') target.classList.remove('no-cuts'); }
+    finally {
+      if (mode==='single') target.classList.remove('exporting');
+      if (mode==='sheet') target.classList.remove('no-cuts');
+    }
   }
 
   // ===== 事件 =====
