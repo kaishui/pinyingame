@@ -51,7 +51,7 @@ body{font-family:'PingFang SC','Microsoft YaHei','Helvetica Neue',Arial,sans-ser
 .paper.exporting .paper-tag{display:none!important}
 
 .card{position:absolute;overflow:visible;border-radius:8px;box-shadow:0 5px 18px rgba(0,0,0,.2);transform-origin:center center}
-.text-el{position:absolute;transform:translate(-50%,-50%);transform-origin:center center;cursor:grab;white-space:pre-wrap;user-select:none;touch-action:none;padding:2px 6px;border-radius:4px;font-weight:700;line-height:1.18;min-width:10px;min-height:1em;outline:none;text-align:center;z-index:2}
+.text-el{position:absolute;transform:translate(-50%,-50%);transform-origin:center center;cursor:grab;white-space:nowrap;user-select:none;touch-action:none;padding:2px 6px;border-radius:4px;font-weight:700;line-height:1.18;min-width:10px;min-height:1em;outline:none;text-align:center;z-index:2}
 .text-el:active{cursor:grabbing}
 .text-el:focus{outline:1.5px dashed rgba(45,52,54,.85);outline-offset:2px}
 .text-el[contenteditable]:empty::before{content:''}
@@ -165,8 +165,8 @@ body{font-family:'PingFang SC','Microsoft YaHei','Helvetica Neue',Arial,sans-ser
   ];
   // 排版预设（位置 x/y 百分比）
   const LAYOUTS = [
-    { key:'stack', label:'居中上下', pos:{ cls:[50,14], name:[50,44], slogan:[50,74], org:[50,90] } },
-    { key:'hrow', label:'居中横排', pos:{ cls:[34,45], name:[66,45], slogan:[50,75], org:[50,90] } },
+    { key:'stack', label:'居中上下', pos:{ cls:[50,30], name:[50,46], slogan:[50,74], org:[50,90] } },
+    { key:'hrow', label:'居中横排', pos:{ cls:[38,46], name:[62,46], slogan:[50,75], org:[50,90] } },
     { key:'left', label:'左对齐', pos:{ cls:[16,18], name:[16,44], slogan:[16,74], org:[16,90] } },
     { key:'right', label:'右对齐', pos:{ cls:[84,18], name:[84,44], slogan:[84,74], org:[84,90] } },
   ];
@@ -176,7 +176,7 @@ body{font-family:'PingFang SC','Microsoft YaHei','Helvetica Neue',Arial,sans-ser
   let useCustom = false;
   let currentColor = '#1B2E91';
   let cardRotation = 0;
-  let elements = { cls:{x:50,y:14}, name:{x:50,y:44}, slogan:{x:50,y:74}, org:{x:50,y:90} };
+  let elements = { cls:{x:50,y:30}, name:{x:50,y:46}, slogan:{x:50,y:74}, org:{x:50,y:90} };
 
   function hexToRgb(hex){const m=/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);return m?{r:parseInt(m[1],16),g:parseInt(m[2],16),b:parseInt(m[3],16)}:null;}
   function bright(hex){const r=hexToRgb(hex);return r?(r.r*299+r.g*587+r.b*114)/1000:255;}
@@ -312,7 +312,7 @@ body{font-family:'PingFang SC','Microsoft YaHei','Helvetica Neue',Arial,sans-ser
   function resetAll(){
     useCustom = false; currentSize = 'id1h'; printSheet = 'a6'; currentColor = '#1B2E91'; cardRotation = 0;
     $('autoFontColor').checked = true; $('fontColor').value = '#ffffff'; $('fontColor').disabled = true;
-    elements = { cls:{x:50,y:14}, name:{x:50,y:44}, slogan:{x:50,y:74}, org:{x:50,y:90} };
+    elements = { cls:{x:50,y:30}, name:{x:50,y:46}, slogan:{x:50,y:74}, org:{x:50,y:90} };
     $('customColor').value = '#1B2E91';
     renderClassColors(); renderSizes(); renderCard();
     setElText('cls','一1班'); setElText('name','张三'); setElText('slogan','文明礼仪'); setElText('org','广州市番禺区市桥富都小学');
