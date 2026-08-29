@@ -1,555 +1,506 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>挂牌底卡生成器</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif;
-            background: #eef0f4; min-height: 100vh;
-            display: flex; justify-content: center; align-items: flex-start; padding: 20px;
-        }
-        .app-container {
-            width: 100%; max-width: 1320px; background: #fff; border-radius: 24px;
-            box-shadow: 0 16px 50px rgba(0,0,0,.10); padding: 28px 32px 34px;
-        }
-        .app-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 22px; padding-bottom: 14px; border-bottom: 2px solid #f0f2f5; }
-        .app-header h1 { font-size: 24px; font-weight: 800; color: #1a1a2e; }
-        .app-header h1 small { font-size: 13px; font-weight: 400; color: #999; margin-left: 6px; }
-        .header-hint { font-size: 13px; color: #999; background: #f5f6fa; padding: 6px 14px; border-radius: 30px; }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>挂牌底卡生成器</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'PingFang SC','Microsoft YaHei','Helvetica Neue',Arial,sans-serif;background:#eef0f4;min-height:100vh;display:flex;justify-content:center;align-items:flex-start;padding:18px}
+.app-container{width:100%;max-width:1340px;background:#fff;border-radius:22px;box-shadow:0 14px 44px rgba(0,0,0,.10);padding:26px 30px 32px}
+.app-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:20px;padding-bottom:12px;border-bottom:2px solid #f0f2f5}
+.app-header h1{font-size:23px;font-weight:800;color:#1a1a2e}
+.app-header h1 small{font-size:12px;font-weight:400;color:#999;margin-left:6px}
+.header-hint{font-size:12.5px;color:#999;background:#f5f6fa;padding:6px 13px;border-radius:30px}
+.main-layout{display:flex;gap:30px;flex-wrap:wrap}
+.control-panel{flex:0 0 350px;min-width:290px;display:flex;flex-direction:column;gap:14px}
+.preview-panel{flex:1;min-width:420px;background:#f7f8fb;border-radius:16px;padding:22px 16px;display:flex;flex-direction:column;align-items:center;min-height:560px}
+.control-group{background:#f8f9fc;border-radius:13px;padding:15px 17px}
+.control-group>label{display:block;font-size:14px;font-weight:700;color:#2d3436;margin-bottom:10px}
+.control-group>label .unit{font-weight:400;color:#999;font-size:12px;margin-left:3px}
+.mode-tabs{display:flex;gap:9px}
+.mode-tab{flex:1;padding:10px 0;border:2px solid #dfe6e9;border-radius:9px;background:#fff;font-size:14px;font-weight:700;color:#666;cursor:pointer;text-align:center}
+.mode-tab.active{background:#2d3436;color:#fff;border-color:#2d3436}
 
-        .main-layout { display: flex; gap: 32px; flex-wrap: wrap; }
-        .control-panel { flex: 0 0 340px; min-width: 280px; display: flex; flex-direction: column; gap: 16px; }
-        .preview-panel { flex: 1; min-width: 420px; background: #f7f8fb; border-radius: 18px; padding: 22px 16px; display: flex; flex-direction: column; align-items: center; min-height: 560px; }
+/* 班级色卡 */
+.class-color-row{display:flex;flex-wrap:wrap;gap:8px}
+.class-swatch{flex:0 0 calc(25% - 6px);border-radius:9px;padding:12px 4px;text-align:center;cursor:pointer;font-weight:800;font-size:13px;border:3px solid transparent;transition:.15s;box-shadow:0 2px 6px rgba(0,0,0,.10)}
+.class-swatch:hover{transform:scale(1.05)}
+.class-swatch.active{border-color:#2d3436;box-shadow:0 0 0 2px #fff,0 0 0 4px #2d3436}
 
-        .control-group { background: #f8f9fc; border-radius: 14px; padding: 16px 18px; }
-        .control-group > label { display: block; font-size: 14px; font-weight: 700; color: #2d3436; margin-bottom: 10px; }
-        .control-group > label .unit { font-weight: 400; color: #999; font-size: 12px; margin-left: 4px; }
+/* 自定义色 */
+.custom-color-row{display:flex;align-items:center;gap:10px;margin-top:10px}
+.custom-color-row input[type=color]{width:38px;height:38px;border:2px solid #dfe6e9;border-radius:8px;cursor:pointer;padding:2px;background:#fff}
+.custom-color-row span{font-size:12px;color:#888}
 
-        /* 模式切换 */
-        .mode-tabs { display: flex; gap: 10px; }
-        .mode-tab { flex: 1; padding: 10px 0; border: 2px solid #dfe6e9; border-radius: 10px; background: #fff; font-size: 15px; font-weight: 700; color: #666; cursor: pointer; text-align: center; transition: .15s; }
-        .mode-tab.active { background: #2d3436; color: #fff; border-color: #2d3436; }
+/* 输入 */
+.input-group{display:flex;flex-direction:column;gap:9px}
+.input-row{display:flex;align-items:center;gap:9px}
+.input-row label{font-size:13px;font-weight:600;color:#555;min-width:44px}
+.input-row input{flex:1;padding:8px 11px;border:2px solid #dfe6e9;border-radius:9px;font-size:14px;font-family:inherit;background:#fff;outline:none;min-width:0}
+.input-row input:focus{border-color:#2d3436}
+.auto-font{display:flex;align-items:center;gap:5px;min-width:auto;font-weight:500;font-size:12px;color:#555;cursor:pointer}
 
-        /* 尺寸按钮 */
-        .size-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-        .size-btn { padding: 9px 0; border: 2px solid #dfe6e9; border-radius: 9px; background: #fff; font-size: 14px; font-weight: 700; color: #555; cursor: pointer; text-align: center; transition: .15s; }
-        .size-btn.active { background: #2d3436; color: #fff; border-color: #2d3436; }
+/* 选项按钮组 */
+.opt-row{display:flex;gap:7px;flex-wrap:wrap}
+.opt-btn{flex:1;min-width:52px;padding:8px 6px;border:2px solid #dfe6e9;border-radius:8px;background:#fff;font-size:13px;font-weight:700;color:#555;cursor:pointer;text-align:center}
+.opt-btn.active{background:#2d3436;color:#fff;border-color:#2d3436}
 
-        /* 色卡：正方格横排 */
-        .color-row { display: flex; gap: 9px; overflow-x: auto; padding: 3px 2px 6px; }
-        .color-swatch { flex: 0 0 auto; width: 42px; height: 42px; border-radius: 9px; border: 3px solid transparent; cursor: pointer; position: relative; transition: .15s; box-shadow: 0 2px 5px rgba(0,0,0,.08); }
-        .color-swatch:hover { transform: scale(1.08); }
-        .color-swatch.active { border-color: #2d3436; box-shadow: 0 0 0 2px #fff, 0 0 0 5px #2d3436; }
-        .color-swatch .ck { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 16px; text-shadow: 0 1px 3px rgba(0,0,0,.5); opacity: 0; }
-        .color-swatch.active .ck { opacity: 1; }
-        .custom-color-row { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
-        .custom-color-row input[type="color"] { width: 40px; height: 40px; border: 2px solid #dfe6e9; border-radius: 8px; cursor: pointer; padding: 2px; background: #fff; }
-        .custom-color-row span { font-size: 12px; color: #888; }
+/* 尺寸 */
+.size-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+.size-btn{padding:8px 0;border:2px solid #dfe6e9;border-radius:8px;background:#fff;font-size:13px;font-weight:700;color:#555;cursor:pointer;text-align:center}
+.size-btn.active{background:#2d3436;color:#fff;border-color:#2d3436}
 
-        /* 输入 */
-        .input-group { display: flex; flex-direction: column; gap: 10px; }
-        .input-row { display: flex; align-items: center; gap: 10px; }
-        .input-row label { font-size: 13px; font-weight: 600; color: #555; min-width: 44px; }
-        .input-row input, .input-row textarea { flex: 1; padding: 8px 12px; border: 2px solid #dfe6e9; border-radius: 9px; font-size: 14px; font-family: inherit; background: #fff; outline: none; min-width: 0; }
-        .input-row input:focus, .input-row textarea:focus { border-color: #2d3436; }
-        .auto-font { display: flex; align-items: center; gap: 5px; min-width: auto; font-weight: 500; font-size: 12px; color: #555; cursor: pointer; }
+/* 操作 */
+.action-buttons{display:flex;gap:10px}
+.action-btn{flex:1;padding:12px;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:.15s}
+.action-btn.primary{background:#2d3436;color:#fff}
+.action-btn.success{background:#00b894;color:#fff}
+.action-btn:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,.15)}
+.hint-line{margin-top:8px;font-size:11px;color:#bbb;text-align:center}
 
-        /* 拼版卡片列表 */
-        .sheet-size-row { display: flex; align-items: center; gap: 10px; }
-        .card-list { display: flex; flex-direction: column; gap: 10px; }
-        .list-item { background: #fff; border: 2px solid #eef0f5; border-radius: 12px; padding: 12px; }
-        .list-item .li-top { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-        .list-item input, .list-item select { padding: 7px 10px; border: 2px solid #e5e8ee; border-radius: 8px; font-size: 13px; font-family: inherit; outline: none; }
-        .list-item .li-name { flex: 1; min-width: 70px; }
-        .list-item .li-cls { width: 70px; }
-        .list-item select { width: 64px; }
-        .list-item .li-color { width: 36px; height: 36px; padding: 2px; border: 2px solid #e5e8ee; border-radius: 8px; cursor: pointer; }
-        .list-item .li-del { margin-left: auto; border: none; background: #ffecec; color: #e74c3c; border-radius: 8px; width: 30px; height: 30px; font-size: 16px; cursor: pointer; }
-        .list-item .li-bot { display: flex; gap: 8px; }
-        .list-item .li-bot input { flex: 1; min-width: 0; }
-        .add-card-btn { padding: 10px; border: 2px dashed #c9ced6; border-radius: 10px; background: #fff; color: #666; font-size: 14px; font-weight: 700; cursor: pointer; }
-        .add-card-btn:hover { border-color: #2d3436; color: #2d3436; }
+/* 预览 */
+.preview-label{font-size:12px;color:#bbb;letter-spacing:1px;margin-bottom:12px}
+.stage{display:flex;align-items:center;justify-content:center;width:100%}
+.card{position:relative;overflow:visible;width:100%;max-width:400px;aspect-ratio:0.7071;display:flex;flex-direction:column;border-radius:12px;box-shadow:0 14px 38px rgba(0,0,0,.18);transform-origin:center center}
+.card .corner{position:absolute;width:30px;height:30px;border:3px solid currentColor;opacity:.5;pointer-events:none;z-index:3}
+.card .corner-tl{top:14px;left:14px;border-right:none;border-bottom:none}
+.card .corner-br{bottom:14px;right:14px;border-left:none;border-top:none}
+.card .deco{position:absolute;border-radius:50%;opacity:.07;pointer-events:none;z-index:1;background:currentColor}
+.card .deco-1{width:60%;height:60%;top:-18%;right:-16%}
+.card .deco-2{width:34%;height:34%;bottom:-10%;left:-8%}
+.card-content{flex:1;display:flex;flex-direction:column;justify-content:space-between;position:relative;z-index:2;padding:11% 9%}
+.card-mid{flex:1;display:flex;align-items:center;justify-content:center;text-align:inherit}
+.card-mid.stack{flex-direction:column;justify-content:center;gap:6px}
+.card-mid.row{flex-direction:row;gap:18px}
+.card-class{font-size:20px;font-weight:700;letter-spacing:2px;padding:5px 14px;border:2px solid currentColor;border-radius:999px;white-space:nowrap}
+.card-name{font-size:46px;font-weight:800;letter-spacing:5px;line-height:1.1}
+.card-bottom{text-align:inherit}
+.card-slogan{font-size:18px;font-weight:700;letter-spacing:5px;margin-bottom:4px}
+.card-org{font-size:13px;opacity:.8;letter-spacing:1px}
+.vert .card-name{writing-mode:vertical-rl;letter-spacing:8px}
+.vert .card-class{letter-spacing:2px}
 
-        /* 操作按钮 */
-        .action-buttons { display: flex; gap: 10px; }
-        .action-btn { flex: 1; padding: 12px; border: none; border-radius: 11px; font-size: 15px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: .15s; }
-        .action-btn.primary { background: #2d3436; color: #fff; }
-        .action-btn.success { background: #00b894; color: #fff; }
-        .action-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,.15); }
-        .hint-line { margin-top: 8px; font-size: 11.5px; color: #bbb; text-align: center; }
+/* 拼版 */
+.sheet{position:relative;background:#fff;box-shadow:0 14px 38px rgba(0,0,0,.18);border-radius:4px;width:100%;max-width:560px;aspect-ratio:0.7071}
+.sheet-card{position:absolute;overflow:hidden;display:flex;flex-direction:column;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,.10);transform-origin:center center}
+.sheet-card .card-content{padding:9% 8%}
+.sheet-card .card-class{font-size:11px;padding:3px 8px;letter-spacing:1px}
+.sheet-card .card-name{font-size:22px;letter-spacing:2px}
+.sheet-card .card-slogan{font-size:10px;letter-spacing:3px}
+.sheet-card .card-org{font-size:8px}
+.sheet-card .corner{width:14px;height:14px;border-width:2px;top:6px;left:6px}
+.sheet-card .corner-br{top:auto;left:auto;bottom:6px;right:6px}
+.empty-hint{color:#c0c4cc;text-align:center;padding:40px 0;font-size:14px}
 
-        /* ===== 卡片预览 ===== */
-        .preview-label { font-size: 12px; color: #bbb; letter-spacing: 1px; margin-bottom: 12px; }
-        .stage { display: flex; align-items: center; justify-content: center; width: 100%; }
+/* 卡片列表(拼版) */
+.card-list{display:flex;flex-direction:column;gap:9px}
+.list-item{background:#fff;border:2px solid #eef0f5;border-radius:11px;padding:11px}
+.list-item .li-top{display:flex;align-items:center;gap:7px;margin-bottom:7px}
+.list-item input,.list-item select{padding:7px 9px;border:2px solid #e5e8ee;border-radius:8px;font-size:12.5px;font-family:inherit;outline:none}
+.list-item .li-name{flex:1;min-width:64px}
+.list-item .li-cls{width:66px}
+.list-item select{width:60px}
+.list-item .li-color{width:34px;height:34px;padding:2px;border:2px solid #e5e8ee;border-radius:8px;cursor:pointer}
+.list-item .li-del{margin-left:auto;border:none;background:#ffecec;color:#e74c3c;border-radius:8px;width:28px;height:28px;font-size:15px;cursor:pointer}
+.list-item .li-bot{display:flex;gap:7px}
+.list-item .li-bot input{flex:1;min-width:0}
+.add-card-btn{padding:10px;border:2px dashed #c9ced6;border-radius:10px;background:#fff;color:#666;font-size:14px;font-weight:700;cursor:pointer}
+.add-card-btn:hover{border-color:#2d3436;color:#2d3436}
 
-        /* 单卡 */
-        .card {
-            position: relative; overflow: hidden;
-            width: 100%; max-width: 400px; aspect-ratio: 0.7071;
-            display: flex; flex-direction: column;
-            border-radius: 14px; box-shadow: 0 14px 40px rgba(0,0,0,.16);
-        }
-        .card .corner { position: absolute; width: 30px; height: 30px; border: 3px solid currentColor; opacity: .55; pointer-events: none; z-index: 3; }
-        .card .corner-tl { top: 14px; left: 14px; border-right: none; border-bottom: none; border-top-left-radius: 6px; }
-        .card .corner-br { bottom: 14px; right: 14px; border-left: none; border-top: none; border-bottom-right-radius: 6px; }
-        .card .deco { position: absolute; border-radius: 50%; opacity: .07; pointer-events: none; z-index: 1; background: currentColor; }
-        .card .deco-1 { width: 60%; height: 60%; top: -18%; right: -16%; }
-        .card .deco-2 { width: 34%; height: 34%; bottom: -10%; left: -8%; }
-        .card-content { flex: 1; display: flex; flex-direction: column; justify-content: space-between; position: relative; z-index: 2; padding: 12% 10%; }
-
-        .card-mid { flex: 1; display: flex; align-items: center; justify-content: center; gap: 16px; flex-wrap: wrap; text-align: center; }
-        .card-class { font-size: 20px; font-weight: 700; letter-spacing: 2px; padding: 5px 14px; border: 2px solid currentColor; border-radius: 999px; opacity: .95; white-space: nowrap; }
-        .card-name { font-size: 46px; font-weight: 800; letter-spacing: 5px; line-height: 1.1; }
-        .card-bottom { text-align: center; }
-        .card-slogan { font-size: 18px; font-weight: 700; letter-spacing: 5px; margin-bottom: 4px; }
-        .card-org { font-size: 13px; opacity: .78; letter-spacing: 1px; }
-
-        /* 拼版 */
-        .sheet { position: relative; background: #fff; box-shadow: 0 14px 40px rgba(0,0,0,.18); border-radius: 4px; width: 100%; max-width: 560px; aspect-ratio: 0.7071; }
-        .sheet-card { position: absolute; overflow: hidden; display: flex; flex-direction: column; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,.10); }
-        .sheet-card .card-content { padding: 9% 8%; }
-        .sheet-card .card-class { font-size: 11px; padding: 3px 8px; letter-spacing: 1px; }
-        .sheet-card .card-name { font-size: 22px; letter-spacing: 2px; }
-        .sheet-card .card-slogan { font-size: 10px; letter-spacing: 3px; }
-        .sheet-card .card-org { font-size: 8px; }
-        .sheet-card .corner { width: 14px; height: 14px; border-width: 2px; top: 6px; left: 6px; }
-        .sheet-card .corner-br { top: auto; left: auto; bottom: 6px; right: 6px; }
-        .empty-hint { color: #c0c4cc; text-align: center; padding: 40px 0; font-size: 14px; }
-
-        /* 响应式 */
-        @media (max-width: 900px) {
-            .main-layout { flex-direction: column; }
-            .control-panel { flex: 1; width: 100%; }
-            .preview-panel { min-width: 0; min-height: 400px; }
-            .card { max-width: 320px; }
-            .sheet { max-width: 360px; }
-        }
-        @media (max-width: 560px) {
-            .app-container { padding: 14px 12px; border-radius: 16px; }
-            .size-grid { grid-template-columns: repeat(4, 1fr); }
-            .card { max-width: 260px; }
-            .card-name { font-size: 34px; }
-            .sheet { max-width: 300px; }
-        }
-
-        /* 打印 */
-        @media print {
-            body { background: #fff; padding: 0; }
-            .app-container, .app-header, .control-panel, .preview-label { display: none !important; }
-            .preview-panel { background: #fff !important; padding: 0 !important; }
-            .card, .sheet { box-shadow: none !important; border-radius: 0 !important; max-width: 100% !important; }
-        }
-    </style>
+@media (max-width:900px){.main-layout{flex-direction:column}.control-panel{flex:1;width:100%}.preview-panel{min-width:0;min-height:400px}.card{max-width:320px}.sheet{max-width:360px}}
+@media (max-width:560px){.app-container{padding:14px 12px;border-radius:14px}.card{max-width:260px}.card-name{font-size:34px}.sheet{max-width:300px}.class-swatch{flex-basis:calc(50% - 4px)}}
+@media print{body{background:#fff;padding:0}.app-container,.app-header,.control-panel,.preview-label{display:none!important}.preview-panel{background:#fff!important;padding:0!important}.card,.sheet{box-shadow:none!important;border-radius:0!important;max-width:100%!important}}
+</style>
 </head>
 <body>
-    <div class="app-container">
-        <header class="app-header">
-            <h1>🏷️ 挂牌底卡生成器<small>A1–A8 · 拼版 · 存照片</small></h1>
-            <span class="header-hint">📐 单卡 / 一版多卡 · 随意组合</span>
-        </header>
+<div class="app-container">
+  <header class="app-header">
+    <h1>🏷️ 挂牌底卡生成器<small>8 班色卡 · 横竖排 · 可旋转</small></h1>
+    <span class="header-hint">📐 单卡 / 一版多卡</span>
+  </header>
 
-        <div class="main-layout">
-            <!-- ===== 左侧控制 ===== -->
-            <div class="control-panel">
-                <!-- 模式 -->
-                <div class="control-group">
-                    <label>🪄 模式</label>
-                    <div class="mode-tabs" id="modeTabs">
-                        <button class="mode-tab active" data-mode="single">单卡</button>
-                        <button class="mode-tab" data-mode="sheet">拼版（一版多卡）</button>
-                    </div>
-                </div>
-
-                <!-- 尺寸（单卡） -->
-                <div class="control-group" id="sizeGroup">
-                    <label>📏 卡片尺寸 <span class="unit">（A1–A8）</span></label>
-                    <div class="size-grid" id="sizeGrid"></div>
-                </div>
-
-                <!-- 纸张（拼版） -->
-                <div class="control-group" id="sheetSizeGroup" style="display:none;">
-                    <label>📄 纸张尺寸 <span class="unit">（排布底纸）</span></label>
-                    <div class="size-grid" id="sheetSizeGrid"></div>
-                </div>
-
-                <!-- 色卡 -->
-                <div class="control-group">
-                    <label>🎨 色卡 <span class="unit">（正方格横排）</span></label>
-                    <div class="color-row" id="colorRow"></div>
-                    <div class="custom-color-row">
-                        <input type="color" id="customColor" value="#2d3436" />
-                        <span>自定义颜色</span>
-                    </div>
-                </div>
-
-                <!-- 字体颜色 -->
-                <div class="control-group">
-                    <label>🖋️ 字体颜色</label>
-                    <div class="input-row">
-                        <label>颜色</label>
-                        <input type="color" id="fontColor" value="#ffffff" />
-                        <label class="auto-font"><input type="checkbox" id="autoFontColor" checked /> 自动</label>
-                    </div>
-                    <div class="hint-line" style="text-align:left; margin-top:6px;">勾选“自动”按背景明暗配字色；取消后可手动选。</div>
-                </div>
-
-                <!-- 内容（单卡） -->
-                <div class="control-group" id="contentGroup">
-                    <label>✏️ 卡片内容</label>
-                    <div class="input-group">
-                        <div class="input-row"><label>班级</label><input type="text" id="inputClass" value="一1班" /></div>
-                        <div class="input-row"><label>姓名</label><input type="text" id="inputName" value="张三" /></div>
-                        <div class="input-row"><label>标语</label><input type="text" id="inputSlogan" value="文明礼仪" /></div>
-                        <div class="input-row"><label>机构</label><input type="text" id="inputOrg" value="广州市番禺区市桥富..." /></div>
-                    </div>
-                </div>
-
-                <!-- 拼版卡片列表 -->
-                <div class="control-group" id="cardListGroup" style="display:none;">
-                    <label>🃏 卡片列表 <span class="unit">（可自由增删、改尺寸/颜色）</span></label>
-                    <div class="card-list" id="cardList"></div>
-                    <button class="add-card-btn" id="addCardBtn">＋ 添加一张卡片</button>
-                </div>
-
-                <!-- 操作 -->
-                <div class="control-group" style="background: transparent; padding: 0;">
-                    <div class="action-buttons">
-                        <button class="action-btn primary" id="printBtn">🖨️ 打印</button>
-                        <button class="action-btn success" id="exportBtn">⬇️ 存照片</button>
-                    </div>
-                    <div class="hint-line">💡 导出为高清 PNG 照片</div>
-                </div>
-            </div>
-
-            <!-- ===== 右侧预览 ===== -->
-            <div class="preview-panel" id="previewPanel">
-                <div class="preview-label" id="previewLabel">📋 单卡预览</div>
-                <div class="stage" id="stage">
-                    <div class="card" id="cardPreview">
-                        <span class="corner corner-tl"></span>
-                        <span class="corner corner-br"></span>
-                        <div class="deco deco-1"></div>
-                        <div class="deco deco-2"></div>
-                        <div class="card-content">
-                            <div class="card-mid">
-                                <span class="card-class" id="previewClass">一1班</span>
-                                <span class="card-name" id="previewName">张三</span>
-                            </div>
-                            <div class="card-bottom">
-                                <div class="card-slogan" id="previewSlogan">文明礼仪</div>
-                                <div class="card-org" id="previewOrg">广州市番禺区市桥富...</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="sheet" id="sheetPreview" style="display:none;"></div>
-                </div>
-            </div>
+  <div class="main-layout">
+    <div class="control-panel">
+      <!-- 模式 -->
+      <div class="control-group"><label>🪄 模式</label>
+        <div class="mode-tabs" id="modeTabs">
+          <button class="mode-tab active" data-mode="single">单卡</button>
+          <button class="mode-tab" data-mode="sheet">拼版（一版多卡）</button>
         </div>
+      </div>
+
+      <!-- 8 班色卡 -->
+      <div class="control-group">
+        <label>🧑‍🏫 各班色卡 <span class="unit">（点击变色并填班级）</span></label>
+        <div class="class-color-row" id="classColorRow"></div>
+        <div class="custom-color-row">
+          <input type="color" id="customColor" value="#1B2E91" />
+          <span>自定义颜色</span>
+        </div>
+      </div>
+
+      <!-- 字体颜色 -->
+      <div class="control-group"><label>🖋️ 字体颜色</label>
+        <div class="input-row">
+          <label>颜色</label>
+          <input type="color" id="fontColor" value="#ffffff" />
+          <label class="auto-font"><input type="checkbox" id="autoFontColor" checked /> 自动</label>
+        </div>
+      </div>
+
+      <!-- 文字排版 -->
+      <div class="control-group"><label>🀄 文字排版</label>
+        <div class="input-row" style="margin-bottom:8px;"><label style="min-width:52px;">排列</label>
+          <div class="opt-row" id="arrangeRow">
+            <button class="opt-btn active" data-val="stack">上下</button>
+            <button class="opt-btn" data-val="row">横排</button>
+          </div>
+        </div>
+        <div class="input-row" style="margin-bottom:8px;"><label style="min-width:52px;">方向</label>
+          <div class="opt-row" id="dirRow">
+            <button class="opt-btn active" data-val="horiz">横</button>
+            <button class="opt-btn" data-val="vert">竖</button>
+          </div>
+        </div>
+        <div class="input-row"><label style="min-width:52px;">对齐</label>
+          <div class="opt-row" id="alignRow">
+            <button class="opt-btn" data-val="left">左</button>
+            <button class="opt-btn active" data-val="center">中</button>
+            <button class="opt-btn" data-val="right">右</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 旋转 -->
+      <div class="control-group"><label>🔄 卡片旋转</label>
+        <div class="opt-row" id="rotateRow">
+          <button class="opt-btn active" data-val="0">0°</button>
+          <button class="opt-btn" data-val="90">90°</button>
+          <button class="opt-btn" data-val="180">180°</button>
+          <button class="opt-btn" data-val="270">270°</button>
+        </div>
+      </div>
+
+      <!-- 尺寸(单卡) -->
+      <div class="control-group" id="sizeGroup"><label>📏 卡片尺寸 <span class="unit">A1–A8</span></label>
+        <div class="size-grid" id="sizeGrid"></div>
+      </div>
+
+      <!-- 纸张(拼版) -->
+      <div class="control-group" id="sheetSizeGroup" style="display:none"><label>📄 纸张尺寸</label>
+        <div class="size-grid" id="sheetSizeGrid"></div>
+      </div>
+
+      <!-- 内容 -->
+      <div class="control-group" id="contentGroup"><label>✏️ 卡片内容</label>
+        <div class="input-group">
+          <div class="input-row"><label>班级</label><input type="text" id="inputClass" value="一1班" /></div>
+          <div class="input-row"><label>姓名</label><input type="text" id="inputName" value="张三" /></div>
+          <div class="input-row"><label>标语</label><input type="text" id="inputSlogan" value="文明礼仪" /></div>
+          <div class="input-row"><label>学校</label><input type="text" id="inputOrg" value="广州市番禺区富都小学" /></div>
+        </div>
+      </div>
+
+      <!-- 拼版列表 -->
+      <div class="control-group" id="cardListGroup" style="display:none"><label>🃏 卡片列表</label>
+        <div class="card-list" id="cardList"></div>
+        <button class="add-card-btn" id="addCardBtn">＋ 添加一张卡片</button>
+      </div>
+
+      <!-- 操作 -->
+      <div class="control-group" style="background:transparent;padding:0">
+        <div class="action-buttons">
+          <button class="action-btn primary" id="printBtn">🖨️ 打印</button>
+          <button class="action-btn success" id="exportBtn">⬇️ 存照片</button>
+        </div>
+        <div class="hint-line">💡 导出高清 PNG 照片</div>
+      </div>
     </div>
 
-    <script>
-    (function () {
-        'use strict';
+    <div class="preview-panel">
+      <div class="preview-label" id="previewLabel">📋 单卡预览</div>
+      <div class="stage" id="stage">
+        <div class="card" id="cardPreview">
+          <span class="corner corner-tl"></span><span class="corner corner-br"></span>
+          <div class="deco deco-1"></div><div class="deco deco-2"></div>
+          <div class="card-content" id="cardContent">
+            <div class="card-mid stack" id="cardMid">
+              <span class="card-class" id="previewClass">一1班</span>
+              <span class="card-name" id="previewName">张三</span>
+            </div>
+            <div class="card-bottom">
+              <div class="card-slogan" id="previewSlogan">文明礼仪</div>
+              <div class="card-org" id="previewOrg">广州市番禺区富都小学</div>
+            </div>
+          </div>
+        </div>
+        <div class="sheet" id="sheetPreview" style="display:none;"></div>
+      </div>
+    </div>
+  </div>
+</div>
 
-        // ===== 尺寸数据（A1–A8，宽高 mm，纵横比均为 1/√2）=====
-        const SIZES = [
-            { key: 'a1', label: 'A1', w: 594, h: 841 },
-            { key: 'a2', label: 'A2', w: 420, h: 594 },
-            { key: 'a3', label: 'A3', w: 297, h: 420 },
-            { key: 'a4', label: 'A4', w: 210, h: 297 },
-            { key: 'a5', label: 'A5', w: 148, h: 210 },
-            { key: 'a6', label: 'A6', w: 105, h: 148 },
-            { key: 'a7', label: 'A7', w: 74, h: 105 },
-            { key: 'a8', label: 'A8', w: 52, h: 74 },
-        ];
-        const SHEET_SIZES = ['a3', 'a4', 'a5'];
-        const ASPECT = 1 / Math.SQRT2;
-        const sizeOf = (k) => SIZES.find(s => s.key === k);
+<script>
+(function () {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  const SIZES = [
+    { key:'a1',label:'A1',w:594,h:841 },{ key:'a2',label:'A2',w:420,h:594 },
+    { key:'a3',label:'A3',w:297,h:420 },{ key:'a4',label:'A4',w:210,h:297 },
+    { key:'a5',label:'A5',w:148,h:210 },{ key:'a6',label:'A6',w:105,h:148 },
+    { key:'a7',label:'A7',w:74,h:105 },{ key:'a8',label:'A8',w:52,h:74 },
+  ];
+  const SHEET_SIZES = ['a3','a4','a5'];
+  const ASPECT = 1 / Math.SQRT2;
+  const sizeOf = (k) => SIZES.find(s => s.key === k);
 
-        const PRESET_COLORS = [
-            '#E74C3C', '#E67E22', '#F1C40F', '#2ECC71', '#1ABC9C', '#3498DB',
-            '#5B6ABF', '#9B59B6', '#E91E8C', '#2C3E50', '#7F8C8D', '#34495E',
-        ];
+  // 8 个班：图片上的纯色 + 推荐字色
+  const CLASS_COLORS = [
+    { label:'一1班', bg:'#1B2E91', text:'#ffffff' },
+    { label:'一2班', bg:'#B39DDB', text:'#3d2b56' },
+    { label:'一3班', bg:'#1E78D8', text:'#ffffff' },
+    { label:'一4班', bg:'#F06CA8', text:'#5c1a3d' },
+    { label:'一5班', bg:'#FFE93B', text:'#6b5b00' },
+    { label:'一6班', bg:'#3FA24A', text:'#ffffff' },
+    { label:'一7班', bg:'#F59A18', text:'#7a4a00' },
+    { label:'一8班', bg:'#E43232', text:'#ffffff' },
+  ];
 
-        // ===== DOM =====
-        const $ = (id) => document.getElementById(id);
-        const cardEl = $('cardPreview');
-        const sheetEl = $('sheetPreview');
-        const previewLabel = $('previewLabel');
-        const colorRow = $('colorRow');
-        const sizeGrid = $('sizeGrid');
-        const sheetSizeGrid = $('sheetSizeGrid');
-        const cardList = $('cardList');
+  const cardEl = $('cardPreview');
+  const cardContent = $('cardContent');
+  const cardMid = $('cardMid');
+  const sheetEl = $('sheetPreview');
 
-        // ===== 状态 =====
-        let mode = 'single';
-        let currentSize = 'a4';
-        let sheetSize = 'a4';
-        let currentColor = '#2d3436';
-        let cards = [];
-        let uid = 1;
+  let mode = 'single';
+  let currentSize = 'a4';
+  let sheetSize = 'a4';
+  let currentColor = '#1B2E91';
+  let cards = [];
+  let uid = 1;
+  let arrangement = 'stack';
+  let textDir = 'horiz';
+  let textAlign = 'center';
+  let rotation = 0;
 
-        // ===== 工具 =====
-        function hexToRgb(hex) {
-            const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-            return m ? { r: parseInt(m[1], 16), g: parseInt(m[2], 16), b: parseInt(m[3], 16) } : null;
-        }
-        function hexWithAlpha(hex, a) {
-            const rgb = hexToRgb(hex);
-            return rgb ? `rgba(${rgb.r},${rgb.g},${rgb.b},${a})` : `rgba(0,0,0,${a})`;
-        }
-        function brightnessOf(hex) {
-            const rgb = hexToRgb(hex);
-            return rgb ? (rgb.r * 299 + rgb.g * 587 + rgb.b * 114) / 1000 : 255;
-        }
+  const esc = (s) => String(s).replace(/[&<>"']/g, (ch) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+  function hexToRgb(hex){const m=/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);return m?{r:parseInt(m[1],16),g:parseInt(m[2],16),b:parseInt(m[3],16)}:null;}
+  function bright(hex){const r=hexToRgb(hex);return r?(r.r*299+r.g*587+r.b*114)/1000:255;}
+  function resolveTextColor(bg){ if($('autoFontColor').checked){return bright(bg)>170?'#1a1a2e':'#ffffff';} return $('fontColor').value||'#1a1a2e'; }
 
-        // ===== 文字色 =====
-        function resolveTextColor(bgHex) {
-            if ($('autoFontColor').checked) {
-                return brightnessOf(bgHex) > 180 ? '#1a1a2e' : '#ffffff';
-            }
-            return $('fontColor').value || '#1a1a2e';
-        }
+  // 单卡样式
+  function applyStyle() {
+    const tc = resolveTextColor(currentColor);
+    cardEl.style.backgroundColor = currentColor;
+    cardEl.style.color = tc;
+    cardEl.style.transform = rotation ? `rotate(${rotation}deg)` : '';
+    cardContent.classList.toggle('vert', textDir === 'vert');
+    cardMid.classList.toggle('stack', arrangement === 'stack');
+    cardMid.classList.toggle('row', arrangement === 'row');
+    cardContent.style.textAlign = textAlign;
+    $('previewClass').style.color = tc;
+    $('previewName').style.color = tc;
+    $('previewSlogan').style.color = tc;
+    $('previewOrg').style.color = $('autoFontColor').checked ? (bright(currentColor)>170?'rgba(0,0,0,.55)':'rgba(255,255,255,.7)') : tc;
+    $('previewOrg').style.opacity = .8;
+  }
+  function updateSingleContent() {
+    $('previewClass').textContent = $('inputClass').value || '班级';
+    $('previewName').textContent = $('inputName').value || '姓名';
+    $('previewSlogan').textContent = $('inputSlogan').value || '';
+    $('previewOrg').textContent = $('inputOrg').value || '';
+  }
 
-        // ===== 卡片模板（用于拼版）=====
-        function cardInnerHTML(c) {
-            const tc = resolveTextColor(c.color);
-            return `<span class="corner corner-tl"></span><span class="corner corner-br"></span>` +
-                `<div class="deco deco-1"></div><div class="deco deco-2"></div>` +
-                `<div class="card-content">` +
-                `<div class="card-mid"><span class="card-class">${esc(c.cls || '班级')}</span><span class="card-name">${esc(c.name || '姓名')}</span></div>` +
-                `<div class="card-bottom"><div class="card-slogan">${esc(c.slogan || '标语')}</div><div class="card-org">${esc(c.org || '')}</div></div>` +
-                `</div>`;
-        }
-        function esc(s) {
-            return String(s).replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
-        }
+  // 渲染 8 班色卡
+  function renderClassColors() {
+    const row = $('classColorRow');
+    row.innerHTML = '';
+    CLASS_COLORS.forEach((c, i) => {
+      const d = document.createElement('button');
+      d.className = 'class-swatch' + (currentColor === c.bg ? ' active' : '');
+      d.style.backgroundColor = c.bg;
+      d.style.color = c.text;
+      d.textContent = c.label;
+      d.onclick = () => {
+        currentColor = c.bg;
+        if (mode === 'single') { $('inputClass').value = c.label; $('autoFontColor').checked = false; $('fontColor').value = c.text; $('fontColor').disabled = true; }
+        else { cards.push(newCard(c)); renderCardList(); renderSheet(); }
+        $('customColor').value = c.bg;
+        renderClassColors();
+        if (mode === 'single') { updateSingleContent(); applyStyle(); }
+      };
+      row.appendChild(d);
+    });
+  }
 
-        // ===== 渲染单卡 =====
-        function applyColor(hex) {
-            currentColor = hex;
-            const tc = resolveTextColor(hex);
-            cardEl.style.backgroundColor = hex;
-            cardEl.style.color = tc;
-            $('previewClass').style.color = tc;
-            $('previewName').style.color = tc;
-            $('previewSlogan').style.color = tc;
-            $('previewOrg').style.color = $('autoFontColor').checked
-                ? (brightnessOf(hex) > 180 ? 'rgba(0,0,0,.55)' : 'rgba(255,255,255,.7)')
-                : hexWithAlpha(tc, .7);
-        }
-        function updateSingleContent() {
-            $('previewClass').textContent = $('inputClass').value || '班级';
-            $('previewName').textContent = $('inputName').value || '姓名';
-            $('previewSlogan').textContent = $('inputSlogan').value || '标语';
-            $('previewOrg').textContent = $('inputOrg').value || '机构名称';
-        }
+  function selectCustomColor(hex){
+    currentColor = hex;
+    $('customColor').value = hex;
+    renderClassColors();
+    if (mode === 'single') applyStyle();
+  }
 
-        // ===== 渲染色卡 =====
-        function renderColors() {
-            colorRow.innerHTML = '';
-            PRESET_COLORS.forEach((hex) => {
-                const d = document.createElement('div');
-                d.className = 'color-swatch' + (hex === currentColor && mode === 'single' ? ' active' : '');
-                d.style.backgroundColor = hex;
-                d.innerHTML = '<span class="ck">✓</span>';
-                d.onclick = () => { selectColor(hex); };
-                colorRow.appendChild(d);
-            });
-        }
-        function selectColor(hex) {
-            currentColor = hex;
-            $('customColor').value = hex;
-            renderColors();
-            if (mode === 'single') applyColor(hex);
-        }
+  // 渲染尺寸
+  function renderSizes() {
+    $('sizeGrid').innerHTML = '';
+    SIZES.forEach(s => {
+      const b = document.createElement('button');
+      b.className = 'size-btn' + (s.key === currentSize ? ' active' : '');
+      b.textContent = s.label;
+      b.onclick = () => { currentSize = s.key; renderSizes(); };
+      $('sizeGrid').appendChild(b);
+    });
+    $('sheetSizeGrid').innerHTML = '';
+    SHEET_SIZES.forEach(k => {
+      const s = sizeOf(k);
+      const b = document.createElement('button');
+      b.className = 'size-btn' + (k === sheetSize ? ' active' : '');
+      b.textContent = s.label;
+      b.onclick = () => { sheetSize = k; renderSizes(); renderSheet(); };
+      $('sheetSizeGrid').appendChild(b);
+    });
+  }
 
-        // ===== 渲染尺寸 =====
-        function renderSizes() {
-            sizeGrid.innerHTML = '';
-            SIZES.forEach((s) => {
-                const b = document.createElement('button');
-                b.className = 'size-btn' + (s.key === currentSize ? ' active' : '');
-                b.textContent = s.label;
-                b.onclick = () => { currentSize = s.key; renderSizes(); };
-                sizeGrid.appendChild(b);
-            });
-            sheetSizeGrid.innerHTML = '';
-            SHEET_SIZES.forEach((k) => {
-                const s = sizeOf(k);
-                const b = document.createElement('button');
-                b.className = 'size-btn' + (k === sheetSize ? ' active' : '');
-                b.textContent = s.label;
-                b.onclick = () => { sheetSize = k; renderSizes(); renderSheet(); };
-                sheetSizeGrid.appendChild(b);
-            });
-        }
+  // 拼版卡片
+  function newCard(preset) {
+    const c = preset ? { id: uid++, cls: preset.label, name: '同学' + uid, slogan: '文明礼仪', org: '广州市番禺区富都小学', color: preset.bg, size: 'a6' } :
+                       { id: uid++, cls: '一1班', name: '同学' + uid, slogan: '文明礼仪', org: '广州市番禺区富都小学', color: '#1B2E91', size: 'a6' };
+    return c;
+  }
+  function renderCardList() {
+    $('cardList').innerHTML = '';
+    cards.forEach((c, idx) => {
+      const item = document.createElement('div');
+      item.className = 'list-item';
+      item.innerHTML =
+        `<div class="li-top"><input class="li-name" placeholder="姓名" value="${esc(c.name)}">` +
+        `<input class="li-cls" placeholder="班级" value="${esc(c.cls)}">` +
+        `<select class="li-size">${['a5','a6','a7','a8'].map(k=>`<option value="${k}" ${k===c.size?'selected':''}>${sizeOf(k).label}</option>`).join('')}</select>` +
+        `<input type="color" class="li-color" value="${c.color}">` +
+        `<button class="li-del">✕</button></div>` +
+        `<div class="li-bot"><input class="li-slogan" placeholder="标语" value="${esc(c.slogan)}">` +
+        `<input class="li-org" placeholder="学校" value="${esc(c.org)}"></div>`;
+      item.querySelector('.li-name').oninput = (e)=>{c.name=e.target.value;renderSheet();};
+      item.querySelector('.li-cls').oninput = (e)=>{c.cls=e.target.value;renderSheet();};
+      item.querySelector('.li-size').onchange = (e)=>{c.size=e.target.value;renderSheet();};
+      item.querySelector('.li-color').oninput = (e)=>{c.color=e.target.value;renderSheet();};
+      item.querySelector('.li-slogan').oninput = (e)=>{c.slogan=e.target.value;renderSheet();};
+      item.querySelector('.li-org').oninput = (e)=>{c.org=e.target.value;renderSheet();};
+      item.querySelector('.li-del').onclick = ()=>{cards.splice(idx,1);renderCardList();renderSheet();};
+      $('cardList').appendChild(item);
+    });
+  }
 
-        // ===== 拼版：卡片列表 =====
-        function newCard() {
-            return { id: uid++, cls: '一1班', name: '同学' + uid, slogan: '文明礼仪', org: '', color: PRESET_COLORS[uid % PRESET_COLORS.length], size: 'a6' };
-        }
-        function renderCardList() {
-            cardList.innerHTML = '';
-            cards.forEach((c, idx) => {
-                const item = document.createElement('div');
-                item.className = 'list-item';
-                item.innerHTML =
-                    `<div class="li-top">` +
-                    `<input class="li-name" placeholder="姓名" value="${esc(c.name)}">` +
-                    `<input class="li-cls" placeholder="班级" value="${esc(c.cls)}">` +
-                    `<select class="li-size">${SIZES.filter(s => ['a5','a6','a7','a8'].includes(s.key)).map(s => `<option value="${s.key}" ${s.key===c.size?'selected':''}>${s.label}</option>`).join('')}</select>` +
-                    `<input type="color" class="li-color" value="${c.color}">` +
-                    `<button class="li-del" title="删除">✕</button></div>` +
-                    `<div class="li-bot">` +
-                    `<input class="li-slogan" placeholder="标语" value="${esc(c.slogan)}">` +
-                    `<input class="li-org" placeholder="机构" value="${esc(c.org)}">` +
-                    `</div>`;
-                item.querySelector('.li-name').oninput = (e) => { c.name = e.target.value; renderSheet(); };
-                item.querySelector('.li-cls').oninput = (e) => { c.cls = e.target.value; renderSheet(); };
-                item.querySelector('.li-size').onchange = (e) => { c.size = e.target.value; renderSheet(); };
-                item.querySelector('.li-color').oninput = (e) => { c.color = e.target.value; renderSheet(); };
-                item.querySelector('.li-slogan').oninput = (e) => { c.slogan = e.target.value; renderSheet(); };
-                item.querySelector('.li-org').oninput = (e) => { c.org = e.target.value; renderSheet(); };
-                item.querySelector('.li-del').onclick = () => { cards.splice(idx, 1); renderCardList(); renderSheet(); };
-                cardList.appendChild(item);
-            });
-        }
+  const cardInnerHTML = (c) => {
+    const tc = resolveTextColor(c.color);
+    const mid = arrangement === 'row'
+      ? `<div class="card-mid row"><span class="card-class">${esc(c.cls)}</span><span class="card-name">${esc(c.name)}</span></div>`
+      : `<div class="card-mid stack"><div class="card-name">${esc(c.name)}</div><div class="card-class">${esc(c.cls)}</div></div>`;
+    return `<span class="corner corner-tl"></span><span class="corner corner-br"></span>` +
+      `<div class="deco deco-1"></div><div class="deco deco-2"></div>` +
+      `<div class="card-content${textDir==='vert'?' vert':''}" style="text-align:${textAlign}">` +
+      `${mid}<div class="card-bottom"><div class="card-slogan">${esc(c.slogan)}</div><div class="card-org">${esc(c.org)}</div></div></div>`;
+  };
 
-        // ===== 拼版：布局 + 渲染 =====
-        function layoutCards() {
-            const sheet = sizeOf(sheetSize);
-            const margin = 5; // mm
-            const maxW = sheet.w - margin * 2, maxH = sheet.h - margin * 2;
-            let x = margin, y = margin, rowH = 0;
-            const placed = [];
-            cards.forEach((c) => {
-                const s = sizeOf(c.size);
-                let w = s.w, h = s.h;
-                const sc = Math.min(1, maxW / w, maxH / h);
-                w *= sc; h *= sc;
-                if (x + w > sheet.w - margin + 0.01) { x = margin; y += rowH + margin; rowH = 0; }
-                placed.push({ c, x, y, w, h });
-                x += w + margin;
-                rowH = Math.max(rowH, h);
-            });
-            return placed;
-        }
-        function renderSheet() {
-            sheetEl.innerHTML = '';
-            if (!cards.length) {
-                sheetEl.innerHTML = '<div class="empty-hint">还没有卡片，点左侧“＋ 添加一张卡片”</div>';
-                return;
-            }
-            const sheet = sizeOf(sheetSize);
-            const placed = layoutCards();
-            placed.forEach(({ c, x, y, w, h }) => {
-                const d = document.createElement('div');
-                d.className = 'sheet-card';
-                d.style.left = (x / sheet.w * 100) + '%';
-                d.style.top = (y / sheet.h * 100) + '%';
-                d.style.width = (w / sheet.w * 100) + '%';
-                d.style.height = (h / sheet.h * 100) + '%';
-                d.style.backgroundColor = c.color;
-                d.style.color = resolveTextColor(c.color);
-                d.innerHTML = cardInnerHTML(c);
-                // 字号随尺寸缩放
-                const nameSize = Math.max(9, Math.round(h / sheet.h * 46));
-                const classSize = Math.max(8, Math.round(nameSize * 0.45));
-                const sloganSize = Math.max(7, Math.round(nameSize * 0.42));
-                d.querySelector('.card-name').style.fontSize = nameSize + 'px';
-                d.querySelector('.card-class').style.fontSize = classSize + 'px';
-                d.querySelector('.card-slogan').style.fontSize = sloganSize + 'px';
-                d.querySelector('.card-org').style.fontSize = Math.max(6, sloganSize * 0.6) + 'px';
-                sheetEl.appendChild(d);
-            });
-        }
+  function layoutCards() {
+    const sheet = sizeOf(sheetSize);
+    const margin = 5; let x = margin, y = margin, rowH = 0; const placed = [];
+    const maxW = sheet.w - margin*2, maxH = sheet.h - margin*2;
+    cards.forEach((c) => {
+      const s = sizeOf(c.size); let w = s.w, h = s.h;
+      const sc = Math.min(1, maxW/w, maxH/h); w*=sc; h*=sc;
+      if (x + w > sheet.w - margin + 0.01) { x = margin; y += rowH + margin; rowH = 0; }
+      placed.push({ c, x, y, w, h }); x += w + margin; rowH = Math.max(rowH, h);
+    });
+    return placed;
+  }
+  function renderSheet() {
+    $('sheetPreview').innerHTML = '';
+    if (!cards.length) { $('sheetPreview').innerHTML = '<div class="empty-hint">还没有卡片，点左侧“＋添加卡片”</div>'; return; }
+    const sheet = sizeOf(sheetSize);
+    layoutCards().forEach(({ c, x, y, w, h }) => {
+      const d = document.createElement('div');
+      d.className = 'sheet-card';
+      d.style.left = (x/sheet.w*100)+'%'; d.style.top = (y/sheet.h*100)+'%';
+      d.style.width = (w/sheet.w*100)+'%'; d.style.height = (h/sheet.h*100)+'%';
+      d.style.backgroundColor = c.color; d.style.color = resolveTextColor(c.color);
+      d.style.transform = rotation ? `rotate(${rotation}deg)` : '';
+      d.innerHTML = cardInnerHTML(c);
+      const nameSize = Math.max(9, Math.round(h/sheet.h*46));
+      d.querySelector('.card-name').style.fontSize = nameSize+'px';
+      d.querySelector('.card-class').style.fontSize = Math.max(8, Math.round(nameSize*0.45))+'px';
+      d.querySelector('.card-slogan').style.fontSize = Math.max(7, Math.round(nameSize*0.42))+'px';
+      d.querySelector('.card-org').style.fontSize = Math.max(6, Math.round(nameSize*0.28))+'px';
+      $('sheetPreview').appendChild(d);
+    });
+  }
 
-        // ===== 模式切换 =====
-        function setMode(m) {
-            mode = m;
-            document.querySelectorAll('.mode-tab').forEach(t => t.classList.toggle('active', t.dataset.mode === m));
-            $('sizeGroup').style.display = m === 'single' ? '' : 'none';
-            $('contentGroup').style.display = m === 'single' ? '' : 'none';
-            $('sheetSizeGroup').style.display = m === 'sheet' ? '' : 'none';
-            $('cardListGroup').style.display = m === 'sheet' ? '' : 'none';
-            $('cardPreview').style.display = m === 'single' ? '' : 'none';
-            $('sheetPreview').style.display = m === 'sheet' ? '' : 'none';
-            previewLabel.textContent = m === 'single' ? '📋 单卡预览' : '📋 拼版预览（一版多卡）';
-            renderColors();
-            if (m === 'single') applyColor(currentColor);
-            else renderSheet();
-        }
+  function setMode(m) {
+    mode = m;
+    document.querySelectorAll('.mode-tab').forEach(t=>t.classList.toggle('active', t.dataset.mode===m));
+    $('sizeGroup').style.display = m==='single'?'':'none';
+    $('contentGroup').style.display = m==='single'?'':'none';
+    $('sheetSizeGroup').style.display = m==='sheet'?'':'none';
+    $('cardListGroup').style.display = m==='sheet'?'':'none';
+    $('cardPreview').style.display = m==='single'?'':'none';
+    $('sheetPreview').style.display = m==='sheet'?'':'none';
+    $('previewLabel').textContent = m==='single'?'📋 单卡预览':'📋 拼版预览（一版多卡）';
+    renderClassColors();
+    if (m==='single') applyStyle(); else renderSheet();
+  }
 
-        // ===== 打印 =====
-        function printTarget() {
-            const target = mode === 'single' ? cardEl : sheetEl;
-            const info = sizeOf(mode === 'single' ? currentSize : sheetSize);
-            const orig = { w: target.style.width, h: target.style.height, aspect: target.style.aspectRatio, maxW: target.style.maxWidth };
-            target.style.width = info.w + 'mm';
-            target.style.height = info.h + 'mm';
-            target.style.aspectRatio = 'auto';
-            target.style.maxWidth = '100%';
-            void target.offsetHeight;
-            window.print();
-            setTimeout(() => {
-                target.style.width = orig.w; target.style.height = orig.h;
-                target.style.aspectRatio = orig.aspect || String(ASPECT); target.style.maxWidth = orig.maxW;
-            }, 400);
-        }
+  function bindOpts(rowId, setter) {
+    $(rowId).addEventListener('click', (e) => {
+      const b = e.target.closest('.opt-btn'); if(!b) return;
+      $(rowId).querySelectorAll('.opt-btn').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');
+      setter(b.dataset.val);
+      if (mode==='single') applyStyle(); else renderSheet();
+    });
+  }
 
-        // ===== 导出照片 =====
-        async function exportPNG() {
-            const target = mode === 'single' ? cardEl : sheetEl;
-            try {
-                const canvas = await html2canvas(target, { scale: 4, useCORS: true, backgroundColor: mode === 'single' ? (cardEl.style.backgroundColor || '#fff') : '#ffffff', logging: false });
-                const a = document.createElement('a');
-                a.download = mode === 'single'
-                    ? `挂牌底卡_${currentSize.toUpperCase()}_${$('inputName').value || '姓名'}.png`
-                    : `挂牌底卡_拼版_${sheetSize.toUpperCase()}_${cards.length}张.png`;
-                a.href = canvas.toDataURL('image/png');
-                a.click();
-            } catch (e) {
-                alert('导出失败，请重试。');
-            }
-        }
+  function printTarget() {
+    const target = mode==='single'?cardEl:$('sheetPreview');
+    const info = sizeOf(mode==='single'?currentSize:sheetSize);
+    const orig = { w: target.style.width, h: target.style.height, aspect: target.style.aspectRatio, maxW: target.style.maxWidth };
+    target.style.width = info.w+'mm'; target.style.height = info.h+'mm'; target.style.aspectRatio='auto'; target.style.maxWidth='100%';
+    void target.offsetHeight; window.print();
+    setTimeout(()=>{ target.style.width=orig.w; target.style.height=orig.h; target.style.aspectRatio=orig.aspect||String(ASPECT); target.style.maxWidth=orig.maxW; },400);
+  }
+  async function exportPNG() {
+    const target = mode==='single'?cardEl:$('sheetPreview');
+    try {
+      const canvas = await html2canvas(target, { scale:4, useCORS:true, backgroundColor: mode==='single'?(cardEl.style.backgroundColor||'#fff'):'#fff', logging:false });
+      const a = document.createElement('a');
+      a.download = mode==='single' ? `挂牌底卡_${currentSize.toUpperCase()}_${$('inputName').value||'姓名'}.png` : `挂牌底卡_拼版_${sheetSize.toUpperCase()}_${cards.length}张.png`;
+      a.href = canvas.toDataURL('image/png'); a.click();
+    } catch(e){ alert('导出失败，请重试。'); }
+  }
 
-        // ===== 事件 =====
-        $('modeTabs').addEventListener('click', (e) => {
-            const t = e.target.closest('.mode-tab');
-            if (t) setMode(t.dataset.mode);
-        });
-        $('customColor').addEventListener('input', (e) => { selectColor(e.target.value); });
-        $('autoFontColor').addEventListener('change', () => {
-            $('fontColor').disabled = $('autoFontColor').checked;
-            if (mode === 'single') applyColor(currentColor); else renderSheet();
-        });
-        $('fontColor').addEventListener('input', () => {
-            if (!$('autoFontColor').checked) { if (mode === 'single') applyColor(currentColor); else renderSheet(); }
-        });
-        ['inputClass', 'inputName', 'inputSlogan', 'inputOrg'].forEach(id => $(id).addEventListener('input', updateSingleContent));
-        $('addCardBtn').addEventListener('click', () => { cards.push(newCard()); renderCardList(); renderSheet(); });
-        $('printBtn').addEventListener('click', printTarget);
-        $('exportBtn').addEventListener('click', exportPNG);
+  $('modeTabs').addEventListener('click',(e)=>{const t=e.target.closest('.mode-tab'); if(t) setMode(t.dataset.mode);});
+  $('customColor').addEventListener('input',(e)=>selectCustomColor(e.target.value));
+  $('autoFontColor').addEventListener('change',()=>{ $('fontColor').disabled=$('autoFontColor').checked; if(mode==='single') applyStyle(); else renderSheet(); });
+  $('fontColor').addEventListener('input',()=>{ if(!$('autoFontColor').checked){ if(mode==='single') applyStyle(); else renderSheet(); } });
+  ['inputClass','inputName','inputSlogan','inputOrg'].forEach(id=>$(id).addEventListener('input',()=>{ updateSingleContent(); if(mode==='single') applyStyle(); }));
+  $('addCardBtn').addEventListener('click',()=>{ cards.push(newCard()); renderCardList(); renderSheet(); });
+  $('printBtn').addEventListener('click', printTarget);
+  $('exportBtn').addEventListener('click', exportPNG);
 
-        // ===== 初始化 =====
-        function init() {
-            $('fontColor').disabled = true;
-            renderColors();
-            renderSizes();
-            updateSingleContent();
-            applyColor(currentColor);
-            if (cards.length === 0) { cards.push(newCard()); cards.push(newCard()); }
-            renderCardList();
-            setMode('single');
-        }
-        init();
-        window.__cardGen = { setMode, exportPNG, printTarget };
-    })();
-    </script>
+  bindOpts('arrangeRow', v => arrangement = v);
+  bindOpts('dirRow', v => textDir = v);
+  bindOpts('alignRow', v => textAlign = v);
+  bindOpts('rotateRow', v => rotation = parseInt(v, 10));
+
+  function init(){
+    $('fontColor').disabled = true;
+    renderClassColors(); renderSizes(); updateSingleContent(); applyStyle();
+    if (!cards.length) { cards.push(newCard(CLASS_COLORS[0])); cards.push(newCard(CLASS_COLORS[1])); }
+    renderCardList(); setMode('single');
+  }
+  init();
+  window.__cardGen = { setMode, exportPNG, printTarget };
+})();
+</script>
 </body>
 </html>
