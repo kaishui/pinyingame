@@ -64,9 +64,6 @@ body{font-family:'PingFang SC','Microsoft YaHei','Helvetica Neue',Arial,sans-ser
 .preview-label{font-size:12px;color:#bbb;letter-spacing:1px;margin-bottom:12px}
 .stage{display:flex;align-items:center;justify-content:center;width:100%}
 .card{position:relative;overflow:visible;width:100%;max-width:400px;aspect-ratio:0.7071;display:flex;flex-direction:column;border-radius:12px;box-shadow:0 14px 38px rgba(0,0,0,.18);transform-origin:center center}
-.card .corner{position:absolute;width:30px;height:30px;border:3px solid currentColor;opacity:.5;pointer-events:none;z-index:3}
-.card .corner-tl{top:14px;left:14px;border-right:none;border-bottom:none}
-.card .corner-br{bottom:14px;right:14px;border-left:none;border-top:none}
 .card .deco{position:absolute;border-radius:50%;opacity:.07;pointer-events:none;z-index:1;background:currentColor}
 .card .deco-1{width:60%;height:60%;top:-18%;right:-16%}
 .card .deco-2{width:34%;height:34%;bottom:-10%;left:-8%}
@@ -74,7 +71,7 @@ body{font-family:'PingFang SC','Microsoft YaHei','Helvetica Neue',Arial,sans-ser
 .card-mid{flex:1;display:flex;align-items:center;justify-content:center;text-align:inherit}
 .card-mid.stack{flex-direction:column;justify-content:center;gap:6px}
 .card-mid.row{flex-direction:row;gap:18px}
-.card-class{font-size:20px;font-weight:700;letter-spacing:2px;padding:5px 14px;border:2px solid currentColor;border-radius:999px;white-space:nowrap}
+.card-class{font-size:20px;font-weight:700;letter-spacing:2px;white-space:nowrap}
 .card-name{font-size:46px;font-weight:800;letter-spacing:5px;line-height:1.1}
 .card-bottom{text-align:inherit}
 .card-slogan{font-size:18px;font-weight:700;letter-spacing:5px;margin-bottom:4px}
@@ -90,8 +87,6 @@ body{font-family:'PingFang SC','Microsoft YaHei','Helvetica Neue',Arial,sans-ser
 .sheet-card .card-name{font-size:22px;letter-spacing:2px}
 .sheet-card .card-slogan{font-size:10px;letter-spacing:3px}
 .sheet-card .card-org{font-size:8px}
-.sheet-card .corner{width:14px;height:14px;border-width:2px;top:6px;left:6px}
-.sheet-card .corner-br{top:auto;left:auto;bottom:6px;right:6px}
 .empty-hint{color:#c0c4cc;text-align:center;padding:40px 0;font-size:14px}
 
 /* 卡片列表(拼版) */
@@ -223,7 +218,6 @@ body{font-family:'PingFang SC','Microsoft YaHei','Helvetica Neue',Arial,sans-ser
       <div class="preview-label" id="previewLabel">📋 单卡预览</div>
       <div class="stage" id="stage">
         <div class="card" id="cardPreview">
-          <span class="corner corner-tl"></span><span class="corner corner-br"></span>
           <div class="deco deco-1"></div><div class="deco deco-2"></div>
           <div class="card-content" id="cardContent">
             <div class="card-mid stack" id="cardMid">
@@ -397,8 +391,7 @@ body{font-family:'PingFang SC','Microsoft YaHei','Helvetica Neue',Arial,sans-ser
     const mid = arrangement === 'row'
       ? `<div class="card-mid row"><span class="card-class">${esc(c.cls)}</span><span class="card-name">${esc(c.name)}</span></div>`
       : `<div class="card-mid stack"><div class="card-name">${esc(c.name)}</div><div class="card-class">${esc(c.cls)}</div></div>`;
-    return `<span class="corner corner-tl"></span><span class="corner corner-br"></span>` +
-      `<div class="deco deco-1"></div><div class="deco deco-2"></div>` +
+    return `<div class="deco deco-1"></div><div class="deco deco-2"></div>` +
       `<div class="card-content${textDir==='vert'?' vert':''}" style="text-align:${textAlign}">` +
       `${mid}<div class="card-bottom"><div class="card-slogan">${esc(c.slogan)}</div><div class="card-org">${esc(c.org)}</div></div></div>`;
   };
