@@ -112,7 +112,7 @@ body{font-family:'PingFang SC','Microsoft YaHei','Helvetica Neue',Arial,sans-ser
 
 @media (max-width:900px){.main-layout{flex-direction:column}.control-panel{flex:1;width:100%}.preview-panel{min-width:0;min-height:400px}.card{max-width:320px}.sheet{max-width:360px}}
 @media (max-width:560px){.app-container{padding:14px 12px;border-radius:14px}.card{max-width:260px}.card-name{font-size:34px}.sheet{max-width:300px}.class-swatch{flex-basis:calc(50% - 4px)}}
-@media print{body{background:#fff;padding:0}.app-container,.app-header,.control-panel,.preview-label{display:none!important}.preview-panel{background:#fff!important;padding:0!important}.card,.sheet{box-shadow:none!important;border-radius:0!important;max-width:100%!important}}
+@media print{body{background:#fff;padding:0}.app-container,.app-header,.control-panel,.preview-label{display:none!important}.preview-panel{background:#fff!important;padding:0!important;min-height:100vh;justify-content:center}.card,.sheet{box-shadow:none!important;border-radius:0!important;max-width:100%!important}}
 </style>
 </head>
 <body>
@@ -185,8 +185,19 @@ body{font-family:'PingFang SC','Microsoft YaHei','Helvetica Neue',Arial,sans-ser
       </div>
 
       <!-- 尺寸(单卡) -->
-      <div class="control-group" id="sizeGroup"><label>📏 卡片尺寸 <span class="unit">A1–A8</span></label>
+      <div class="control-group" id="sizeGroup"><label>📏 卡片尺寸 <span class="unit">A1–A8 / 6寸 / 自定义</span></label>
         <div class="size-grid" id="sizeGrid"></div>
+        <div class="input-row" id="customSizeRow" style="display:none;margin-top:8px;">
+          <label>宽</label><input type="number" id="customW" value="90" min="5" max="1000" />
+          <span style="font-size:12px;color:#999;">mm</span>
+          <label>高</label><input type="number" id="customH" value="120" min="5" max="1000" />
+          <span style="font-size:12px;color:#999;">mm</span>
+        </div>
+      </div>
+
+      <!-- 打印纸(单卡) -->
+      <div class="control-group" id="printSheetGroup"><label>🖨️ 打印纸 <span class="unit">（放到纸上直接打印）</span></label>
+        <div class="size-grid" id="printSheetGrid"></div>
       </div>
 
       <!-- 纸张(拼版) -->
@@ -277,6 +288,8 @@ body{font-family:'PingFang SC','Microsoft YaHei','Helvetica Neue',Arial,sans-ser
   let mode = 'single';
   let currentSize = 'a4';
   let sheetSize = 'a4';
+  let printSheet = 'a6';
+  let useCustom = false;
   let currentColor = '#1B2E91';
   let cards = [];
   let uid = 1;
@@ -284,6 +297,15 @@ body{font-family:'PingFang SC','Microsoft YaHei','Helvetica Neue',Arial,sans-ser
   let textDir = 'horiz';
   let textAlign = 'center';
   let rotation = 0;
+
+  function currentCardSize() {
+    if (useCustom) {
+      const w = Math.max(5, Number($('customW').value) || 90);
+      const h = Math.max(5, Number($('customH').value) || 120);
+      return { key: 'custom', label: w + '×' + h, w, h };
+    }
+    return sizeOf(currentSize);
+  }
 
   const esc = (s) => String(s).replace(/[&<>"']/g, (ch) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   function hexToRgb(hex){const m=/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);return m?{r:parseInt(m[1],16),g:parseInt(m[2],16),b:parseInt(m[3],16)}:null;}
@@ -293,7 +315,7 @@ body{font-family:'PingFang SC','Microsoft YaHei','Helvetica Neue',Arial,sans-ser
   // 单卡样式
   function applyStyle() {
     const tc = resolveTextColor(currentColor);
-    const sz = sizeOf(currentSize);
+    const sz = currentCardSize();
     cardEl.style.backgroundColor = currentColor;
     cardEl.style.color = tc;
     cardEl.style.aspectRatio = sz ? (sz.w / sz.h) : String(ASPECT);
@@ -349,11 +371,30 @@ body{font-family:'PingFang SC','Microsoft YaHei','Helvetica Neue',Arial,sans-ser
     $('sizeGrid').innerHTML = '';
     SIZES.forEach(s => {
       const b = document.createElement('button');
-      b.className = 'size-btn' + (s.key === currentSize ? ' active' : '');
+      b.className = 'size-btn' + (s.key === currentSize && !useCustom ? ' active' : '');
       b.textContent = s.label;
-      b.onclick = () => { currentSize = s.key; renderSizes(); };
+      b.onclick = () => { useCustom = false; currentSize = s.key; renderSizes(); if (mode === 'single') applyStyle(); };
       $('sizeGrid').appendChild(b);
     });
+    // 自定义尺寸按钮
+    const cb = document.createElement('button');
+    cb.className = 'size-btn' + (useCustom ? ' active' : '');
+    cb.textContent = '自定义';
+    cb.onclick = () => { useCustom = true; renderSizes(); if (mode === 'single') applyStyle(); };
+    $('sizeGrid').appendChild(cb);
+    $('customSizeRow').style.display = useCustom ? 'flex' : 'none';
+
+    // 打印纸（单卡）
+    $('printSheetGrid').innerHTML = '';
+    ['a4','a5','a6'].forEach(k => {
+      const s = sizeOf(k);
+      const b = document.createElement('button');
+      b.className = 'size-btn' + (k === printSheet ? ' active' : '');
+      b.textContent = s.label;
+      b.onclick = () => { printSheet = k; renderSizes(); };
+      $('printSheetGrid').appendChild(b);
+    });
+
     $('sheetSizeGrid').innerHTML = '';
     SHEET_SIZES.forEach(k => {
       const s = sizeOf(k);
@@ -466,6 +507,7 @@ body{font-family:'PingFang SC','Microsoft YaHei','Helvetica Neue',Arial,sans-ser
     mode = m;
     document.querySelectorAll('.mode-tab').forEach(t=>t.classList.toggle('active', t.dataset.mode===m));
     $('sizeGroup').style.display = m==='single'?'':'none';
+    $('printSheetGroup').style.display = m==='single'?'':'none';
     $('contentGroup').style.display = m==='single'?'':'none';
     $('sheetSizeGroup').style.display = m==='sheet'?'':'none';
     $('cardListGroup').style.display = m==='sheet'?'':'none';
@@ -487,12 +529,25 @@ body{font-family:'PingFang SC','Microsoft YaHei','Helvetica Neue',Arial,sans-ser
   }
 
   function printTarget() {
-    const target = mode==='single'?cardEl:$('sheetPreview');
-    const info = sizeOf(mode==='single'?currentSize:sheetSize);
+    const isSingle = mode === 'single';
+    const target = isSingle ? cardEl : $('sheetPreview');
+    const info = isSingle ? currentCardSize() : sizeOf(sheetSize);
+    const pageSize = isSingle ? sizeOf(printSheet) : sizeOf(sheetSize);
     const orig = { w: target.style.width, h: target.style.height, aspect: target.style.aspectRatio, maxW: target.style.maxWidth };
-    target.style.width = info.w+'mm'; target.style.height = info.h+'mm'; target.style.aspectRatio='auto'; target.style.maxWidth='100%';
-    void target.offsetHeight; window.print();
-    setTimeout(()=>{ target.style.width=orig.w; target.style.height=orig.h; target.style.aspectRatio=orig.aspect||String(ASPECT); target.style.maxWidth=orig.maxW; },400);
+    target.style.width = info.w + 'mm';
+    target.style.height = info.h + 'mm';
+    target.style.aspectRatio = 'auto';
+    target.style.maxWidth = '100%';
+    let ps = document.getElementById('printPageStyle');
+    if (!ps) { ps = document.createElement('style'); ps.id = 'printPageStyle'; document.head.appendChild(ps); }
+    ps.textContent = `@page { size: ${pageSize.w}mm ${pageSize.h}mm; margin: 0; }`;
+    void target.offsetHeight;
+    window.print();
+    setTimeout(() => {
+      target.style.width = orig.w; target.style.height = orig.h;
+      target.style.aspectRatio = orig.aspect || String(ASPECT); target.style.maxWidth = orig.maxW;
+      ps.textContent = '';
+    }, 400);
   }
   async function exportPNG() {
     const target = mode==='single'?cardEl:$('sheetPreview');
@@ -500,7 +555,7 @@ body{font-family:'PingFang SC','Microsoft YaHei','Helvetica Neue',Arial,sans-ser
     try {
       const canvas = await html2canvas(target, { scale:4, useCORS:true, backgroundColor: mode==='single'?(cardEl.style.backgroundColor||'#fff'):'#fff', logging:false });
       const a = document.createElement('a');
-      a.download = mode==='single' ? `挂牌底卡_${sizeOf(currentSize).label}_${$('inputName').value||'姓名'}.png` : `挂牌底卡_拼版_${sizeOf(sheetSize).label}_${cards.length}张.png`;
+      a.download = mode==='single' ? `挂牌底卡_${currentCardSize().label}_${$('inputName').value||'姓名'}.png` : `挂牌底卡_拼版_${sizeOf(sheetSize).label}_${cards.length}张.png`;
       a.href = canvas.toDataURL('image/png'); a.click();
     } catch(e){ alert('导出失败，请重试。'); }
     finally { if (mode==='sheet') $('sheetPreview').classList.remove('no-cuts'); }
@@ -508,6 +563,8 @@ body{font-family:'PingFang SC','Microsoft YaHei','Helvetica Neue',Arial,sans-ser
 
   $('modeTabs').addEventListener('click',(e)=>{const t=e.target.closest('.mode-tab'); if(t) setMode(t.dataset.mode);});
   $('customColor').addEventListener('input',(e)=>selectCustomColor(e.target.value));
+  $('customW').addEventListener('input', ()=>{ if (useCustom && mode==='single') applyStyle(); });
+  $('customH').addEventListener('input', ()=>{ if (useCustom && mode==='single') applyStyle(); });
   $('autoFontColor').addEventListener('change',()=>{ $('fontColor').disabled=$('autoFontColor').checked; if(mode==='single') applyStyle(); else renderSheet(); });
   $('fontColor').addEventListener('input',()=>{ if(!$('autoFontColor').checked){ if(mode==='single') applyStyle(); else renderSheet(); } });
   ['inputClass','inputName','inputSlogan','inputOrg'].forEach(id=>$(id).addEventListener('input',()=>{ updateSingleContent(); if(mode==='single') applyStyle(); }));
