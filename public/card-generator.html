@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>挂牌底卡生成器</title>
+    <!-- 引入 html2canvas 用于导出图片 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js">
+    </script>
+    <style>
+        /* ===== 全局重置 & 基础 ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif;
+            background: #f0f2f5;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 24px;
+        }
+
+        /* ===== 主容器 ===== */
+        .app-container {
+            max-width: 1400px;
+            width: 100%;
+            background: #ffffff;
+            border-radius: 28px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.10);
+            padding: 32px 40px 40px;
+            transition: all 0.2s;
+        }
+
+        /* ===== 标题 ===== */
+        .app-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            margin-bottom: 28px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #f0f2f5;
+        }
+
+        .app-header h1 {
+            font-size: 26px;
+            font-weight: 700;
+            color: #1a1a2e;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .app-header h1 small {
+            font-size: 15px;
+            font-weight: 400;
+            color: #888;
+            margin-left: 6px;
+        }
+
+        .header-hint {
+            font-size: 14px;
+            color: #999;
+            background: #f5f6fa;
+            padding: 6px 16px;
+            border-radius: 30px;
+        }
+
+        /* ===== 主体布局 ===== */
+        .main-layout {
+            display: flex;
+            gap: 40px;
+            flex-wrap: wrap;
+        }
+
+        /* ===== 左侧控制面板 ===== */
+        .control-panel {
+            flex: 0 0 320px;
+            min-width: 260px;
+            display: flex;
+            flex-direction: column;
+            gap: 22px;
+        }
+
+        .control-group {
+            background: #f8f9fc;
+            border-radius: 16px;
+            padding: 18px 20px 20px;
+            transition: 0.2s;
+        }
+
+        .control-group:hover {
+            background: #f5f6fb;
+        }
+
+        .control-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #2d3436;
+            margin-bottom: 10px;
+            letter-spacing: 0.3px;
+        }
+
+        .control-group label .unit {
+            font-weight: 400;
+            color: #999;
+            font-size: 12px;
+            margin-left: 4px;
+        }
+
+        /* ---- 尺寸选择 ---- */
+        .size-options {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .size-btn {
+            flex: 1;
+            min-width: 60px;
+            padding: 10px 0;
+            border: 2px solid #dfe6e9;
+            border-radius: 10px;
+            background: #fff;
+            font-size: 15px;
+            font-weight: 600;
+            color: #555;
+            cursor: pointer;
+            transition: 0.2s;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+        }
+
+        .size-btn:hover {
+            border-color: #b0b8c0;
+            background: #fafafa;
+        }
+
+        .size-btn.active {
+            border-color: #2d3436;
+            background: #2d3436;
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(45, 52, 54, 0.25);
+        }
+
+        .size-btn .sub {
+            display: block;
+            font-size: 10px;
+            font-weight: 400;
+            opacity: 0.7;
+            margin-top: 2px;
+        }
+
+        .size-btn.active .sub {
+            opacity: 0.85;
+        }
+
+        /* ---- 色卡选择 ---- */
+        .color-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 10px;
+        }
+
+        .color-swatch {
+            width: 100%;
+            aspect-ratio: 1/1;
+            border-radius: 12px;
+            border: 3px solid transparent;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+            position: relative;
+        }
+
+        .color-swatch:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .color-swatch.active {
+            border-color: #2d3436;
+            box-shadow: 0 0 0 2px #fff, 0 0 0 5px #2d3436;
+            transform: scale(1.04);
+        }
+
+        .color-swatch .check-mark {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 18px;
+            color: #fff;
+            text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+            opacity: 0;
+            transition: 0.2s;
+            pointer-events: none;
+        }
+
+        .color-swatch.active .check-mark {
+            opacity: 1;
+        }
+
+        /* 自定义颜色 */
+        .custom-color-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .custom-color-row input[type="color"] {
+            width: 42px;
+            height: 42px;
+            border: 2px solid #dfe6e9;
+            border-radius: 10px;
+            cursor: pointer;
+            padding: 2px;
+            background: #fff;
+        }
+
+        .custom-color-row input[type="color"]:hover {
+            border-color: #b0b8c0;
+        }
+
+        .custom-color-row span {
+            font-size: 13px;
+            color: #888;
+        }
+
+        /* ---- 内容编辑 ---- */
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .input-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .input-row label {
+            font-size: 14px;
+            font-weight: 500;
+            color: #444;
+            min-width: 56px;
+            margin-bottom: 0;
+        }
+
+        .input-row input,
+        .input-row textarea {
+            flex: 1;
+            padding: 10px 14px;
+            border: 2px solid #dfe6e9;
+            border-radius: 10px;
+            font-size: 14px;
+            font-family: inherit;
+            background: #fff;
+            transition: 0.2s;
+            outline: none;
+            min-width: 0;
+        }
+
+        .input-row input:focus,
+        .input-row textarea:focus {
+            border-color: #2d3436;
+            box-shadow: 0 0 0 3px rgba(45, 52, 54, 0.10);
+        }
+
+        .input-row textarea {
+            resize: vertical;
+            min-height: 44px;
+            line-height: 1.5;
+        }
+
+        .input-row .input-hint {
+            font-size: 11px;
+            color: #aaa;
+            white-space: nowrap;
+        }
+
+        /* ---- 操作按钮 ---- */
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            flex: 1;
+            min-width: 100px;
+            padding: 12px 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: #fff;
+            color: #2d3436;
+            border: 2px solid #dfe6e9;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .action-btn.primary {
+            background: #2d3436;
+            color: #fff;
+            border-color: #2d3436;
+        }
+
+        .action-btn.primary:hover {
+            background: #1a1a2e;
+            border-color: #1a1a2e;
+            box-shadow: 0 6px 24px rgba(45, 52, 54, 0.30);
+        }
+
+        .action-btn.success {
+            background: #00b894;
+            color: #fff;
+            border-color: #00b894;
+        }
+
+        .action-btn.success:hover {
+            background: #00a381;
+            border-color: #00a381;
+            box-shadow: 0 6px 24px rgba(0, 184, 148, 0.30);
+        }
+
+        .action-btn .icon {
+            font-size: 18px;
+        }
+
+        /* ===== 右侧预览区域 ===== */
+        .preview-panel {
+            flex: 1;
+            min-width: 420px;
+            background: #f8f9fc;
+            border-radius: 20px;
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 560px;
+            position: relative;
+        }
+
+        .preview-panel .preview-label {
+            font-size: 13px;
+            color: #bbb;
+            margin-bottom: 16px;
+            letter-spacing: 1px;
+            font-weight: 500;
+        }
+
+        /* ---- 卡片预览容器 ---- */
+        .card-preview-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 12px 0;
+        }
+
+        /* 实际卡片 — 在预览中按比例缩放 */
+        .card {
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.10);
+            padding: 32px 28px;
+            width: 100%;
+            max-width: 420px;
+            aspect-ratio: 210 / 297;
+            /* 默认 A4 比例 */
+            display: flex;
+            flex-direction: column;
+            transition: all 0.25s ease;
+            position: relative;
+            overflow: hidden;
+            /* 背景色由 JS 动态控制 */;
+        }
+
+        /* 卡片内容 */
+        .card-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            z-index: 2;
+        }
+
+        .card-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding-bottom: 8px;
+        }
+
+        .card-class {
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: #1a1a2e;
+            line-height: 1.2;
+        }
+
+        .card-name {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1a1a2e;
+            line-height: 1.2;
+            text-align: right;
+        }
+
+        .card-bottom {
+            text-align: center;
+            padding-top: 12px;
+            border-top: 2px solid rgba(0, 0, 0, 0.06);
+        }
+
+        .card-slogan {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1a1a2e;
+            letter-spacing: 6px;
+            margin-bottom: 4px;
+        }
+
+        .card-org {
+            font-size: 14px;
+            font-weight: 400;
+            color: #555;
+            letter-spacing: 1px;
+            opacity: 0.8;
+        }
+
+        /* 装饰背景元素 */
+        .card .deco {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.06;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .card .deco-1 {
+            width: 200px;
+            height: 200px;
+            top: -60px;
+            right: -60px;
+            background: currentColor;
+        }
+
+        .card .deco-2 {
+            width: 120px;
+            height: 120px;
+            bottom: -30px;
+            left: -30px;
+            background: currentColor;
+        }
+
+        /* ===== 响应式 ===== */
+        @media (max-width: 1024px) {
+            .app-container {
+                padding: 24px 20px;
+            }
+            .main-layout {
+                flex-direction: column;
+            }
+            .control-panel {
+                flex: 1;
+                width: 100%;
+            }
+            .preview-panel {
+                min-width: 0;
+                min-height: 400px;
+                padding: 24px 16px;
+            }
+            .card {
+                max-width: 340px;
+            }
+            .color-grid {
+                grid-template-columns: repeat(6, 1fr);
+            }
+        }
+
+        @media (max-width: 600px) {
+            .app-container {
+                padding: 16px 12px;
+                border-radius: 16px;
+            }
+            .app-header h1 {
+                font-size: 20px;
+            }
+            .app-header h1 small {
+                font-size: 12px;
+                display: block;
+                margin-left: 0;
+            }
+            .header-hint {
+                font-size: 11px;
+                padding: 4px 12px;
+            }
+            .control-panel {
+                gap: 16px;
+            }
+            .control-group {
+                padding: 14px 14px 16px;
+            }
+            .size-btn {
+                font-size: 13px;
+                padding: 8px 0;
+            }
+            .color-grid {
+                grid-template-columns: repeat(6, 1fr);
+                gap: 8px;
+            }
+            .input-row {
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+            .input-row label {
+                min-width: 40px;
+                font-size: 13px;
+            }
+            .input-row input,
+            .input-row textarea {
+                font-size: 13px;
+                padding: 8px 12px;
+            }
+            .action-btn {
+                font-size: 13px;
+                padding: 10px 12px;
+                min-width: 70px;
+            }
+            .preview-panel {
+                min-height: 300px;
+                padding: 16px 10px;
+            }
+            .card {
+                max-width: 280px;
+                padding: 20px 16px;
+                border-radius: 12px;
+            }
+            .card-class,
+            .card-name {
+                font-size: 20px;
+            }
+            .card-slogan {
+                font-size: 16px;
+                letter-spacing: 4px;
+            }
+            .card-org {
+                font-size: 12px;
+            }
+            .card-bottom {
+                padding-top: 8px;
+            }
+        }
+
+        /* ===== 打印样式 ===== */
+        @media print {
+            body {
+                background: #fff;
+                padding: 0;
+                margin: 0;
+            }
+            .app-container {
+                box-shadow: none;
+                border-radius: 0;
+                padding: 0;
+                max-width: 100%;
+                background: transparent;
+            }
+            .app-header,
+            .control-panel,
+            .preview-label,
+            .preview-panel .preview-label {
+                display: none !important;
+            }
+            .preview-panel {
+                background: transparent !important;
+                padding: 0 !important;
+                min-height: auto !important;
+                border-radius: 0 !important;
+            }
+            .card-preview-wrapper {
+                padding: 0 !important;
+            }
+            .card {
+                box-shadow: none !important;
+                border-radius: 0 !important;
+                max-width: 100% !important;
+                aspect-ratio: auto !important;
+                padding: 0 !important;
+                margin: 0 auto !important;
+                /* 尺寸由 @page 控制 */;
+            }
+            .card .deco {
+                opacity: 0.04;
+            }
+            .card-content {
+                padding: 5% 6%;
+            }
+            /* 卡片尺寸由 JS 在打印前动态设置 inline style */
+        }
+
+        /* ===== 加载提示 ===== */
+        .loading-tip {
+            font-size: 13px;
+            color: #aaa;
+            text-align: center;
+            padding: 12px;
+        }
+
+        /* ===== 导出图片时的临时样式 ===== */
+        .exporting .card {
+            transform: none !important;
+            transition: none !important;
+        }
+
+        /* ===== 小工具 ===== */
+        .mt-1 {
+            margin-top: 6px;
+        }
+        .text-muted {
+            color: #999;
+            font-size: 12px;
+        }
+        .flex-center {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container" id="app">
+        <!-- 头部 -->
+        <header class="app-header">
+            <h1>
+                🏷️ 挂牌底卡生成器
+                <small>在线 · 即编即览</small>
+            </h1>
+            <span class="header-hint">📐 支持 A3 / A4 / A5 · 多色卡</span>
+        </header>
+
+        <!-- 主体 -->
+        <div class="main-layout">
+
+            <!-- ===== 左侧控制面板 ===== -->
+            <div class="control-panel">
+
+                <!-- 尺寸 -->
+                <div class="control-group">
+                    <label>📏 卡片尺寸</label>
+                    <div class="size-options" id="sizeOptions">
+                        <button class="size-btn" data-size="a3">
+                            A3
+                            <span class="sub">297×420mm</span>
+                        </button>
+                        <button class="size-btn active" data-size="a4">
+                            A4
+                            <span class="sub">210×297mm</span>
+                        </button>
+                        <button class="size-btn" data-size="a5">
+                            A5
+                            <span class="sub">148×210mm</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 色卡 -->
+                <div class="control-group">
+                    <label>🎨 色卡 <span class="unit">（点击选择）</span></label>
+                    <div class="color-grid" id="colorGrid">
+                        <!-- 由 JS 动态渲染 -->
+                    </div>
+                    <div class="custom-color-row">
+                        <input type="color" id="customColor" value="#2d3436" />
+                        <span>自定义颜色</span>
+                    </div>
+                </div>
+
+                <!-- 内容编辑 -->
+                <div class="control-group">
+                    <label>✏️ 卡片内容</label>
+                    <div class="input-group">
+                        <div class="input-row">
+                            <label>班级</label>
+                            <input type="text" id="inputClass" value="一1班" placeholder="如：一1班" />
+                        </div>
+                        <div class="input-row">
+                            <label>姓名</label>
+                            <input type="text" id="inputName" value="张三" placeholder="如：张三" />
+                        </div>
+                        <div class="input-row">
+                            <label>标语</label>
+                            <input type="text" id="inputSlogan" value="文明礼仪" placeholder="如：文明礼仪" />
+                        </div>
+                        <div class="input-row">
+                            <label>机构</label>
+                            <input type="text" id="inputOrg" value="广州市番禺区市桥富..." placeholder="机构名称" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 操作按钮 -->
+                <div class="control-group" style="border: none; background: transparent; padding: 0;">
+                    <div class="action-buttons">
+                        <button class="action-btn primary" id="printBtn">
+                            <span class="icon">🖨️</span> 打印
+                        </button>
+                        <button class="action-btn success" id="exportBtn">
+                            <span class="icon">⬇️</span> 导出 PNG
+                        </button>
+                    </div>
+                    <div style="margin-top: 10px; font-size: 12px; color: #bbb; text-align: center;">
+                        💡 打印时自动按所选尺寸输出
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== 右侧预览 ===== -->
+            <div class="preview-panel" id="previewPanel">
+                <div class="preview-label">📋 实时预览</div>
+                <div class="card-preview-wrapper">
+                    <div class="card" id="cardPreview">
+                        <!-- 装饰 -->
+                        <div class="deco deco-1"></div>
+                        <div class="deco deco-2"></div>
+                        <!-- 内容 -->
+                        <div class="card-content">
+                            <div class="card-top">
+                                <div class="card-class" id="previewClass">一1班</div>
+                                <div class="card-name" id="previewName">张三</div>
+                            </div>
+                            <div class="card-bottom">
+                                <div class="card-slogan" id="previewSlogan">文明礼仪</div>
+                                <div class="card-org" id="previewOrg">广州市番禺区市桥富...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- /main-layout -->
+    </div><!-- /app-container -->
+
+    <script>
+        (function() {
+            'use strict';
+
+            // ============================================================
+            //  1. 数据
+            // ============================================================
+            const PRESET_COLORS = [
+                '#E74C3C', // 红
+                '#E67E22', // 橙
+                '#F1C40F', // 黄
+                '#2ECC71', // 绿
+                '#1ABC9C', // 青
+                '#3498DB', // 蓝
+                '#5B6ABF', // 靛蓝
+                '#9B59B6', // 紫
+                '#E91E8C', // 粉
+                '#2C3E50', // 深蓝
+                '#7F8C8D', // 灰
+                '#34495E', // 深灰
+            ];
+
+            const SIZE_MAP = {
+                a3: { label: 'A3', width: 297, height: 420, aspect: 297 / 420 },
+                a4: { label: 'A4', width: 210, height: 297, aspect: 210 / 297 },
+                a5: { label: 'A5', width: 148, height: 210, aspect: 148 / 210 },
+            };
+
+            // ============================================================
+            //  2. DOM 引用
+            // ============================================================
+            const cardEl = document.getElementById('cardPreview');
+            const previewClass = document.getElementById('previewClass');
+            const previewName = document.getElementById('previewName');
+            const previewSlogan = document.getElementById('previewSlogan');
+            const previewOrg = document.getElementById('previewOrg');
+
+            const inputClass = document.getElementById('inputClass');
+            const inputName = document.getElementById('inputName');
+            const inputSlogan = document.getElementById('inputSlogan');
+            const inputOrg = document.getElementById('inputOrg');
+
+            const sizeOptions = document.getElementById('sizeOptions');
+            const colorGrid = document.getElementById('colorGrid');
+            const customColorInput = document.getElementById('customColor');
+
+            const printBtn = document.getElementById('printBtn');
+            const exportBtn = document.getElementById('exportBtn');
+
+            // ============================================================
+            //  3. 状态
+            // ============================================================
+            let currentSize = 'a4';
+            let currentColor = '#2d3436'; // 默认深色
+
+            // ============================================================
+            //  4. 渲染色卡
+            // ============================================================
+            function renderColorSwatches() {
+                colorGrid.innerHTML = '';
+                PRESET_COLORS.forEach((hex) => {
+                    const swatch = document.createElement('div');
+                    swatch.className = 'color-swatch' + (hex === currentColor ? ' active' : '');
+                    swatch.style.backgroundColor = hex;
+                    // 对浅色加边框以便看清
+                    const isLight = isLightColor(hex);
+                    if (isLight) {
+                        swatch.style.borderColor = '#d0d0d0';
+                    }
+                    swatch.dataset.color = hex;
+                    swatch.innerHTML = `<span class="check-mark">✓</span>`;
+                    swatch.addEventListener('click', () => {
+                        selectColor(hex);
+                    });
+                    colorGrid.appendChild(swatch);
+                });
+                // 高亮自定义颜色如果匹配
+                highlightCustomIfMatch();
+            }
+
+            function isLightColor(hex) {
+                const rgb = hexToRgb(hex);
+                if (!rgb) return false;
+                const brightness = (rgb.r * 299 + rgb.g * 587 + rgb.b * 114) / 1000;
+                return brightness > 200;
+            }
+
+            function hexToRgb(hex) {
+                const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+                return result ? {
+                    r: parseInt(result[1], 16),
+                    g: parseInt(result[2], 16),
+                    b: parseInt(result[3], 16)
+                } : null;
+            }
+
+            function selectColor(hex) {
+                currentColor = hex;
+                // 更新色卡 active
+                document.querySelectorAll('.color-swatch').forEach(el => {
+                    el.classList.toggle('active', el.dataset.color === hex);
+                });
+                // 同步自定义颜色选择器
+                customColorInput.value = hex;
+                highlightCustomIfMatch();
+                applyCardColor(hex);
+            }
+
+            function highlightCustomIfMatch() {
+                // 如果当前颜色不在预设中，高亮自定义
+                const isPreset = PRESET_COLORS.includes(currentColor);
+                if (!isPreset) {
+                    // 取消所有预设高亮
+                    document.querySelectorAll('.color-swatch').forEach(el => el.classList.remove('active'));
+                }
+            }
+
+            // 自定义颜色选择
+            customColorInput.addEventListener('input', (e) => {
+                const val = e.target.value;
+                if (val) {
+                    // 取消所有预设高亮
+                    document.querySelectorAll('.color-swatch').forEach(el => el.classList.remove('active'));
+                    currentColor = val;
+                    applyCardColor(val);
+                }
+            });
+
+            // ============================================================
+            //  5. 应用卡片颜色
+            // ============================================================
+            function applyCardColor(hex) {
+                // 设置卡片背景色
+                cardEl.style.backgroundColor = hex;
+                // 文字颜色自适应
+                const rgb = hexToRgb(hex);
+                const textColor = rgb
+                    ? ((rgb.r * 299 + rgb.g * 587 + rgb.b * 114) / 1000 > 180 ? '#1a1a2e' : '#ffffff')
+                    : '#1a1a2e';
+                if (rgb) {
+                    const brightness = (rgb.r * 299 + rgb.g * 587 + rgb.b * 114) / 1000;
+                    const mutedColor = brightness > 180 ? 'rgba(0,0,0,0.55)' : 'rgba(255,255,255,0.70)';
+                    const borderColor = brightness > 180 ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.15)';
+
+                    cardEl.style.color = textColor;
+                    // 装饰用 currentColor
+                    cardEl.style.setProperty('--deco-color', textColor);
+
+                    // 具体元素
+                    const els = [previewClass, previewName, previewSlogan];
+                    els.forEach(el => el.style.color = textColor);
+                    previewOrg.style.color = mutedColor;
+                    // 底部边框
+                    const bottom = cardEl.querySelector('.card-bottom');
+                    if (bottom) {
+                        bottom.style.borderTopColor = borderColor;
+                    }
+                }
+                // 更新装饰颜色（用文字色做低透明度装饰，避免与背景同色而不可见）
+                const decos = cardEl.querySelectorAll('.deco');
+                decos.forEach(d => d.style.color = textColor);
+            }
+
+            // ============================================================
+            //  6. 尺寸切换
+            // ============================================================
+            function setSize(sizeKey) {
+                currentSize = sizeKey;
+                // 更新按钮状态
+                document.querySelectorAll('.size-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.size === sizeKey);
+                });
+                // 更新卡片宽高比
+                const info = SIZE_MAP[sizeKey];
+                if (info) {
+                    cardEl.style.aspectRatio = info.aspect;
+                }
+                // 预览时最大宽度自适应，但保持比例
+                // 另外，为了视觉舒适，根据尺寸调整内边距
+                const paddingMap = {
+                    a3: '40px 36px',
+                    a4: '32px 28px',
+                    a5: '24px 20px',
+                };
+                cardEl.style.padding = paddingMap[sizeKey] || '32px 28px';
+
+                // 字体大小微调
+                const fontSizeMap = {
+                    a3: { class: 34, name: 34, slogan: 24, org: 16 },
+                    a4: { class: 28, name: 28, slogan: 20, org: 14 },
+                    a5: { class: 22, name: 22, slogan: 16, org: 12 },
+                };
+                const sizes = fontSizeMap[sizeKey] || fontSizeMap.a4;
+                previewClass.style.fontSize = sizes.class + 'px';
+                previewName.style.fontSize = sizes.name + 'px';
+                previewSlogan.style.fontSize = sizes.slogan + 'px';
+                previewOrg.style.fontSize = sizes.org + 'px';
+            }
+
+            // ============================================================
+            //  7. 更新内容
+            // ============================================================
+            function updateContent() {
+                previewClass.textContent = inputClass.value || '班级';
+                previewName.textContent = inputName.value || '姓名';
+                previewSlogan.textContent = inputSlogan.value || '标语';
+                previewOrg.textContent = inputOrg.value || '机构名称';
+            }
+
+            // 输入事件绑定
+            [inputClass, inputName, inputSlogan, inputOrg].forEach(el => {
+                el.addEventListener('input', updateContent);
+            });
+
+            // ============================================================
+            //  8. 尺寸按钮事件
+            // ============================================================
+            sizeOptions.addEventListener('click', (e) => {
+                const btn = e.target.closest('.size-btn');
+                if (!btn) return;
+                const size = btn.dataset.size;
+                if (size && size !== currentSize) {
+                    setSize(size);
+                }
+            });
+
+            // ============================================================
+            //  9. 打印
+            // ============================================================
+            function printCard() {
+                // 在打印前，把卡片尺寸精确设置为所选尺寸
+                const info = SIZE_MAP[currentSize];
+                if (!info) return;
+
+                // 临时修改卡片样式以适应打印
+                const originalPadding = cardEl.style.padding;
+                const originalAspect = cardEl.style.aspectRatio;
+                const originalMaxWidth = cardEl.style.maxWidth;
+                const originalWidth = cardEl.style.width;
+
+                // 设置精确尺寸 (mm)
+                cardEl.style.width = info.width + 'mm';
+                cardEl.style.height = info.height + 'mm';
+                cardEl.style.aspectRatio = 'auto';
+                cardEl.style.maxWidth = '100%';
+                cardEl.style.margin = '0 auto';
+
+                // 强制重绘
+                void cardEl.offsetHeight;
+
+                // 执行打印
+                window.print();
+
+                // 恢复样式 (延迟恢复，让打印完成)
+                setTimeout(() => {
+                    cardEl.style.padding = originalPadding;
+                    cardEl.style.aspectRatio = originalAspect || (info.width / info.height);
+                    cardEl.style.maxWidth = originalMaxWidth || '420px';
+                    cardEl.style.width = originalWidth || '100%';
+                    cardEl.style.height = 'auto';
+                }, 500);
+            }
+
+            printBtn.addEventListener('click', printCard);
+
+            // ============================================================
+            //  10. 导出 PNG
+            // ============================================================
+            async function exportPNG() {
+                // 临时将卡片调整到合适大小以便截图
+                const info = SIZE_MAP[currentSize];
+                if (!info) return;
+
+                // 为了导出清晰，按比例放大
+                const scale = 3; // 3x 清晰度
+                const w = info.width * scale;
+                const h = info.height * scale;
+
+                // 保存当前样式
+                const origPadding = cardEl.style.padding;
+                const origAspect = cardEl.style.aspectRatio;
+                const origMaxWidth = cardEl.style.maxWidth;
+                const origWidth = cardEl.style.width;
+                const origHeight = cardEl.style.height;
+                const origBg = cardEl.style.backgroundColor;
+
+                // 设置导出尺寸
+                cardEl.style.width = w + 'px';
+                cardEl.style.height = h + 'px';
+                cardEl.style.aspectRatio = 'auto';
+                cardEl.style.maxWidth = 'none';
+                cardEl.style.padding = getPaddingForSize(currentSize, scale);
+
+                // 强制重绘
+                void cardEl.offsetHeight;
+
+                try {
+                    const canvas = await html2canvas(cardEl, {
+                        scale: 1,
+                        useCORS: true,
+                        backgroundColor: cardEl.style.backgroundColor || '#ffffff',
+                        logging: false,
+                        width: w,
+                        height: h,
+                    });
+
+                    // 下载
+                    const link = document.createElement('a');
+                    link.download = `挂牌底卡_${currentSize.toUpperCase()}_${inputClass.value || '班级'}_${inputName.value || '姓名'}.png`;
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+
+                } catch (err) {
+                    console.error('导出失败:', err);
+                    alert('导出图片失败，请重试或使用打印功能。');
+                } finally {
+                    // 恢复样式
+                    cardEl.style.padding = origPadding;
+                    cardEl.style.aspectRatio = origAspect || (info.width / info.height);
+                    cardEl.style.maxWidth = origMaxWidth || '420px';
+                    cardEl.style.width = origWidth || '100%';
+                    cardEl.style.height = origHeight || 'auto';
+                    cardEl.style.backgroundColor = origBg;
+                    void cardEl.offsetHeight;
+                }
+            }
+
+            function getPaddingForSize(sizeKey, scale) {
+                const base = {
+                    a3: '40px 36px',
+                    a4: '32px 28px',
+                    a5: '24px 20px',
+                };
+                const p = base[sizeKey] || base.a4;
+                // 按比例放大 padding
+                const parts = p.split(' ');
+                const top = parseFloat(parts[0]) * scale;
+                const right = parseFloat(parts[1] || parts[0]) * scale;
+                const bottom = parts.length > 2 ? parseFloat(parts[2]) * scale : top;
+                const left = parts.length > 3 ? parseFloat(parts[3]) * scale : (parts.length > 1 ? right : top);
+                return `${top}px ${right}px ${bottom}px ${left}px`;
+            }
+
+            exportBtn.addEventListener('click', exportPNG);
+
+            // ============================================================
+            //  11. 键盘快捷键 (Ctrl+P 打印)
+            // ============================================================
+            document.addEventListener('keydown', (e) => {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+                    // 如果焦点在输入框中，不拦截
+                    const tag = e.target.tagName;
+                    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+                    e.preventDefault();
+                    printCard();
+                }
+            });
+
+            // ============================================================
+            //  12. 初始化
+            // ============================================================
+            function init() {
+                // 渲染色卡
+                renderColorSwatches();
+                // 默认选中颜色
+                selectColor(currentColor);
+                // 设置默认尺寸 A4
+                setSize('a4');
+                // 更新内容
+                updateContent();
+                // 应用颜色
+                applyCardColor(currentColor);
+            }
+
+            init();
+
+            // 暴露一些方法以便调试
+            window.__cardGen = {
+                setSize,
+                selectColor,
+                updateContent,
+                printCard,
+                exportPNG,
+            };
+
+            console.log('🏷️ 挂牌底卡生成器已启动！');
+            console.log('💡 使用 Ctrl+P 快速打印');
+
+        })();
+    </script>
+
+</body>
+</html>
