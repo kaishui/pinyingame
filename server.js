@@ -52,7 +52,27 @@ async function ensureTable() {
         created_at timestamptz not null default now()
       )`
     );
-    console.log('✅ scores 表已就绪（Supabase）');
+    await pool.query(
+      `CREATE TABLE IF NOT EXISTS public.feedback (
+        id bigserial primary key,
+        content text not null,
+        contact text,
+        page text,
+        user_agent text,
+        ip text,
+        created_at timestamptz not null default now()
+      )`
+    );
+    await pool.query(
+      `CREATE TABLE IF NOT EXISTS public.visitors (
+        ip text primary key,
+        user_agent text,
+        page text,
+        first_seen timestamptz not null default now(),
+        last_seen timestamptz not null default now()
+      )`
+    );
+    console.log('✅ scores / feedback / visitors 表已就绪（Supabase）');
   } catch (e) {
     console.error('⚠️ 建表失败:', e.message);
   }

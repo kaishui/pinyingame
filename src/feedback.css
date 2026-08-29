@@ -1,0 +1,61 @@
+/* ---------- 右下角 意见反馈 ---------- */
+.fb-wrap { position: fixed; right: 14px; bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 950; font-family: inherit; }
+
+.fb-fab {
+  display: flex; align-items: center; gap: 6px;
+  margin-left: auto;
+  background: linear-gradient(135deg, #ff7ab5, #a78bfa);
+  color: #fff; border: none; border-radius: 999px;
+  padding: 10px 16px; font-weight: 800; font-size: 15px;
+  box-shadow: 0 6px 16px rgba(224, 68, 136, .35);
+  cursor: pointer; transition: transform .12s ease, box-shadow .12s ease;
+}
+.fb-fab:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(224, 68, 136, .45); }
+.fb-fab:active { transform: translateY(1px); }
+.fb-fab.active { background: linear-gradient(135deg, #e04488, #8b6ef0); }
+.fb-fab-ico { font-size: 18px; }
+
+.fb-panel {
+  position: absolute; right: 0; bottom: calc(100% + 12px);
+  width: min(320px, calc(100vw - 28px));
+  background: #fff; border-radius: 20px;
+  box-shadow: 0 12px 32px rgba(91, 58, 90, .25);
+  overflow: hidden; animation: fbIn .2s ease;
+}
+@keyframes fbIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+.fb-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 14px;
+  background: linear-gradient(135deg, #ffd6e8, #efe6ff);
+}
+.fb-title { font-weight: 900; font-size: 15px; color: #8b6ef0; }
+.fb-close {
+  border: none; background: none; cursor: pointer;
+  font-size: 15px; color: #8a6488; padding: 2px 6px; border-radius: 8px;
+}
+.fb-close:hover { background: rgba(255, 255, 255, .7); }
+
+.fb-body { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 10px; }
+.fb-text, .fb-contact {
+  width: 100%; border: 2px solid #ffd6e8; border-radius: 12px;
+  padding: 10px 12px; font-size: 14px; font-family: inherit;
+  color: #5b3a5a; background: #fffafd; resize: none; outline: none;
+}
+.fb-text:focus, .fb-contact:focus { border-color: #ff7ab5; background: #fff; }
+.fb-text { min-height: 88px; line-height: 1.6; }
+.fb-contact { padding: 8px 12px; }
+.fb-send {
+  border: none; border-radius: 999px; cursor: pointer;
+  background: linear-gradient(135deg, #ff5fa2, #a78bfa);
+  color: #fff; font-weight: 800; font-size: 15px; padding: 10px;
+  box-shadow: 0 4px 10px rgba(224, 68, 136, .3);
+}
+.fb-send:disabled { opacity: .6; cursor: default; }
+.fb-status { font-size: 13px; font-weight: 700; min-height: 1em; }
+.fb-status.ok { color: #2fbfa9; }
+.fb-status.err { color: #e04488; }
+
+@media print {
+  .fb-wrap { display: none; }
+}

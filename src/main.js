@@ -4,6 +4,9 @@ import './speech-shim.js';
 import { ENGLISH_GRADES, ENGLISH_DECK } from './data-english.js';
 import { MATH_GRADES, MATH_UNITS } from './data-math.js';
 import { submitScore, fetchScores, isLeaderboardReady } from './leaderboard.js';
+import { startVisitorTracking } from './visitor.js';
+import { initFeedback } from './feedback.js';
+import './feedback.css';
 
 'use strict';
 
@@ -1479,6 +1482,8 @@ function initSparkles() {
   initSparkles();
   bindEvents();
   renderHome();
+  initFeedback();           // 右下角意见反馈
+  startVisitorTracking();   // 在线 IP 统计（静默）
   if ('serviceWorker' in navigator && location.protocol !== 'file:') {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./sw.js').catch(() => {});
